@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useCategories } from "../api/hooks";
 import { api, errMessage } from "../api/client";
 import { Icon } from "../lib/icons";
+import { monthLabel, monthRange } from "../lib/format";
 import { useTheme } from "../lib/theme";
 import { useInstallPrompt } from "../lib/useInstall";
 import { CategorySheet } from "../components/CategorySheet";
@@ -19,6 +20,7 @@ export function Settings() {
   const [name, setName] = useState(user?.name ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
+  const [reporting, setReporting] = useState(false);
 
   const [catSheet, setCatSheet] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | undefined>();
@@ -42,22 +44,26 @@ export function Settings() {
     }
   }
 
-  async function exportData() {
-    const [accounts, cats, txns] = await Promise.all([
-      api.get("/accounts"),
-      api.get("/categories"),
-      api.get("/transactions", { params: { limit: 500 } }),
-    ]);
-    const blob = new Blob(
-      [JSON.stringify({ exportedAt: new Date().toISOString(), accounts: accounts.data, categories: cats.data, transactions: txns.data }, null, 2)],
-      { type: "application/json" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fincheck-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function downloadReport() {
+    setReporting(true);
+    try {
+      const range = monthRange(new Date());
+      const [sum, txns] = await Promise.all([
+        api.get("/summary", { params: range }),
+        api.get("/transactions", { params: { ...range, limit: 500 } }),
+      ]);
+      const { generateReport } = await import("../lib/report");
+      generateReport({
+        user: { name: user?.name ?? "", currency: user?.currency ?? "INR" },
+        summary: sum.data,
+        transactions: txns.data,
+        periodLabel: monthLabel(),
+      });
+    } catch (e) {
+      setProfileMsg(errMessage(e));
+    } finally {
+      setReporting(false);
+    }
   }
 
   const income = categories.filter((c) => c.kind === "income");
@@ -166,8 +172,8 @@ export function Settings() {
 
       <section className="card">
         <h2 className="card-title">Data</h2>
-        <button className="btn btn-ghost" onClick={exportData}>
-          <Icon name="download" /> Export all data (JSON)
+        <button className="btn btn-ghost" onClick={downloadReport} disabled={reporting}>
+          <Icon name="download" /> {reporting ? "Preparing report…" : "Download PDF report"}
         </button>
       </section>
 
