@@ -1,0 +1,25 @@
+{
+  "name": "fincheck",
+  "private": true,
+  "version": "0.1.0",
+  "description": "FinCheck — a mobile-first personal finance tracker with account-aware transactions.",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "predev": "node scripts/free-ports.mjs",
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w client",
+    "build": "npm run build -w server && npm run build -w client",
+    "db:setup": "npm run db:push -w server",
+    "start": "npm run start -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
