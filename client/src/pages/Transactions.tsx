@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useAccounts, useTransactions, type TxnFilters } from "../api/hooks";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
+import { Dropdown } from "../components/Dropdown";
 import { dayKey, formatDayHeading, formatMoney } from "../lib/format";
 import type { Transaction, TxnType } from "../lib/types";
 
@@ -53,14 +54,15 @@ export function Transactions() {
         ))}
       </div>
 
-      <select className="input select" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-        <option value="">All accounts</option>
-        {accounts.map((a) => (
-          <option key={a.id} value={a.id}>
-            {a.icon} {a.name}
-          </option>
-        ))}
-      </select>
+      <Dropdown
+        ariaLabel="Filter by account"
+        value={accountId}
+        onChange={setAccountId}
+        options={[
+          { value: "", label: "All accounts" },
+          ...accounts.map((a) => ({ value: a.id, label: a.name, icon: a.icon })),
+        ]}
+      />
 
       {isLoading ? (
         <p className="muted center pad">Loading…</p>

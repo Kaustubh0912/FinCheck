@@ -12,7 +12,7 @@ export function getInitialTheme(): Theme {
 export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute("data-theme", theme);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "dark" ? "#0b1020" : "#0284c7");
+  if (meta) meta.setAttribute("content", theme === "dark" ? "#0a0a0c" : "#f6f6f4");
 }
 
 export function useTheme(): [Theme, (t: Theme) => void] {

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useCategories } from "../api/hooks";
 import { api, errMessage } from "../api/client";
-import { useTheme } from "../lib/theme";
 import { Icon } from "../lib/icons";
 import { CategorySheet } from "../components/CategorySheet";
 import type { Category, CategoryKind } from "../lib/types";
@@ -11,7 +10,6 @@ const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 
 export function Settings() {
   const { user, logout, setUser } = useAuth();
-  const [theme, setTheme] = useTheme();
   const { data: categories = [] } = useCategories();
 
   const [name, setName] = useState(user?.name ?? "");
@@ -108,18 +106,6 @@ export function Settings() {
               {c}
             </button>
           ))}
-        </div>
-      </section>
-
-      <section className="card">
-        <h2 className="card-title">Appearance</h2>
-        <div className="theme-toggle">
-          <button className={theme === "light" ? "active" : ""} onClick={() => setTheme("light")}>
-            <Icon name="sun" /> Light
-          </button>
-          <button className={theme === "dark" ? "active" : ""} onClick={() => setTheme("dark")}>
-            <Icon name="moon" /> Dark
-          </button>
         </div>
       </section>
 

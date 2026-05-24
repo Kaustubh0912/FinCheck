@@ -11,7 +11,7 @@ import {
   // UI chrome
   faReceipt, faGear, faPlus, faXmark, faArrowRight, faTrash, faArrowRightArrowLeft,
   faBoxArchive, faRightFromBracket, faMoon, faSun, faDownload, faPencil,
-  faChevronLeft, faChevronRight, faArrowTrendUp, faArrowTrendDown, faIndianRupeeSign,
+  faChevronLeft, faChevronRight, faChevronDown, faCheck, faArrowTrendUp, faArrowTrendDown, faIndianRupeeSign,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Every icon the app can render, keyed by a short stable slug. */
@@ -31,8 +31,8 @@ const ICONS: Record<string, IconDefinition> = {
   "arrow-right": faArrowRight, trash: faTrash, transfer: faArrowRightArrowLeft,
   archive: faBoxArchive, logout: faRightFromBracket, moon: faMoon, sun: faSun,
   download: faDownload, edit: faPencil, "chevron-left": faChevronLeft,
-  "chevron-right": faChevronRight, "trend-up": faArrowTrendUp, "trend-down": faArrowTrendDown,
-  rupee: faIndianRupeeSign,
+  "chevron-right": faChevronRight, "chevron-down": faChevronDown, check: faCheck,
+  "trend-up": faArrowTrendUp, "trend-down": faArrowTrendDown, rupee: faIndianRupeeSign,
 };
 
 /** Maps legacy emoji values (older DB rows) to the new icon slugs. */

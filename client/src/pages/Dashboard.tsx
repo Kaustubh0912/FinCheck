@@ -89,7 +89,7 @@ export function Dashboard() {
             <div className="donut">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={donutData} dataKey="value" innerRadius="62%" outerRadius="100%" paddingAngle={2} stroke="none">
+                  <Pie data={donutData} dataKey="value" innerRadius="70%" outerRadius="100%" paddingAngle={3} cornerRadius={5} stroke="#0a0a0c" strokeWidth={2}>
                     {donutData.map((d, i) => (
                       <Cell key={i} fill={d.color} />
                     ))}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
+import { SmartDateInput } from "./SmartDateInput";
 import { Icon } from "../lib/icons";
 import { useAccounts, useCategories, useSaveTransaction, useDeleteTransaction } from "../api/hooks";
 import { useAuth } from "../auth/AuthContext";
@@ -187,12 +188,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         </>
       )}
 
-      <div className="field-row">
-        <div className="field grow">
-          <label className="field-label">Date</label>
-          <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-      </div>
+      <SmartDateInput value={date} onChange={setDate} />
 
       <div className="field">
         <label className="field-label">Note</label>
