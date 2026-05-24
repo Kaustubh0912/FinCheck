@@ -41,14 +41,25 @@ A starter _Cash_ account and a set of income/expense categories are created for 
 
 ## Useful scripts
 
-| Command                       | What it does                                  |
-| ----------------------------- | --------------------------------------------- |
-| `npm run dev`                 | Run server + client together (hot reload)     |
-| `npm run dev:server`          | API only                                      |
-| `npm run dev:web`             | Web app only                                  |
-| `npm run db:setup`            | Push the Prisma schema to SQLite              |
-| `npm run db:studio -w server` | Open Prisma Studio to inspect the database    |
-| `npm run build`               | Type-check + build both packages              |
+| Command              | What it does                                                            |
+| -------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`        | Run API + web together with hot reload (frees stale ports first)        |
+| `npm run dev:server` | API only                                                                |
+| `npm run dev:web`    | Web app only                                                            |
+| `npm run build`      | **Production build** — Prisma client + API (tsc) + web (Vite/PWA)       |
+| `npm run start`      | **Run production** — serves API + the built web app, `NODE_ENV=production` (run `build` first) |
+| `npm run clean`      | Remove build artifacts (`server/dist`, `client/dist`, caches)           |
+| `npm run typecheck`  | Type-check both packages without emitting                               |
+| `npm run db:setup`   | Push the Prisma schema to MongoDB (creates collections + indexes)       |
+| `npm run db:studio`  | Open Prisma Studio to inspect the database                              |
+
+**Production in one place:**
+
+```bash
+npm install        # installs deps + generates the Prisma client
+npm run build      # builds the API and the web app
+npm run start      # serves everything on http://localhost:4000
+```
 
 ## Project layout
 

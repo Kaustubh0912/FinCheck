@@ -55,5 +55,5 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 
 app.listen(env.port, () => {
   // eslint-disable-next-line no-console
-  console.log(`[fincheck] API listening on http://localhost:${env.port}`);
+  console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
 });

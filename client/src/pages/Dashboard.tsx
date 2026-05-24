@@ -51,14 +51,16 @@ export function Dashboard() {
         </div>
       </section>
 
-      <div className="month-switch">
-        <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
-          <Icon name="chevron-left" />
-        </button>
-        <span>{monthLabel(monthDate)}</span>
-        <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
-          <Icon name="chevron-right" />
-        </button>
+      <div className="month-switch-wrap">
+        <div className="month-switch">
+          <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+            <Icon name="chevron-left" />
+          </button>
+          <span>{monthLabel(monthDate)}</span>
+          <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
+            <Icon name="chevron-right" />
+          </button>
+        </div>
       </div>
 
       <div className="stat-row">
