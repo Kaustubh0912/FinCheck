@@ -29,10 +29,17 @@ api.interceptors.response.use(
   }
 );
 
-/** Extract a human-friendly message from an axios error. */
+/** Extract a human-friendly message from an axios error. Always returns a string. */
 export function errMessage(error: unknown, fallback = "Something went wrong"): string {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.error ?? error.message ?? fallback;
+    const data = error.response?.data as { error?: unknown; message?: unknown } | undefined;
+    const candidate = data?.error ?? data?.message;
+    if (typeof candidate === "string") return candidate;
+    if (candidate && typeof candidate === "object" && typeof (candidate as { message?: unknown }).message === "string") {
+      return (candidate as { message: string }).message;
+    }
+    return error.message || fallback;
   }
+  if (error instanceof Error) return error.message;
   return fallback;
 }
