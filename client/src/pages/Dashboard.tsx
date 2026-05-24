@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useAuth } from "../auth/AuthContext";
 import { useSummary, useTransactions } from "../api/hooks";
 import { formatMoney, monthLabel, monthRange } from "../lib/format";
@@ -22,11 +21,8 @@ export function Dashboard() {
   const shiftMonth = (delta: number) =>
     setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
 
-  const donutData = (summary?.byCategory ?? []).slice(0, 6).map((c) => ({
-    name: c.name,
-    value: c.amount / 100,
-    color: c.color,
-  }));
+  const cats = (summary?.byCategory ?? []).slice(0, 6);
+  const maxAmt = Math.max(1, ...cats.map((c) => c.amount));
 
   return (
     <div className="page">
@@ -65,55 +61,33 @@ export function Dashboard() {
 
       <div className="stat-row">
         <div className="stat-card">
-          <span className="stat-ic amt-income-bg">
-            <Icon name="trend-up" />
-          </span>
-          <div>
-            <span className="stat-label">Income</span>
-            <span className="stat-value amt-income">{formatMoney(summary?.income ?? 0, currency)}</span>
-          </div>
+          <span className="stat-label">Income</span>
+          <span className="stat-value amt-income">{formatMoney(summary?.income ?? 0, currency)}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-ic amt-expense-bg">
-            <Icon name="trend-down" />
-          </span>
-          <div>
-            <span className="stat-label">Spent</span>
-            <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
-          </div>
+          <span className="stat-label">Spent</span>
+          <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
         </div>
       </div>
 
-      {donutData.length > 0 && (
+      {cats.length > 0 && (
         <section className="card">
           <h2 className="card-title">Where it went</h2>
-          <div className="donut-wrap">
-            <div className="donut">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} dataKey="value" innerRadius="70%" outerRadius="100%" paddingAngle={3} cornerRadius={5} stroke="#0a0a0c" strokeWidth={2}>
-                    {donutData.map((d, i) => (
-                      <Cell key={i} fill={d.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="donut-center">
-                <span className="muted">Spent</span>
-                <strong>{formatMoney(summary?.expense ?? 0, currency)}</strong>
-              </div>
-            </div>
-            <ul className="legend">
-              {summary?.byCategory.slice(0, 6).map((c) => (
-                <li key={c.categoryId ?? c.name}>
-                  <span className="legend-dot" style={{ background: c.color }} />
-                  <span className="legend-name">
-                    <Icon name={c.icon} /> {c.name}
+          <div className="breakdown">
+            {cats.map((c) => (
+              <div className="bd-row" key={c.categoryId ?? c.name}>
+                <div className="bd-head">
+                  <span className="bd-name">
+                    <Icon name={c.icon} style={{ color: c.color }} />
+                    <span>{c.name}</span>
                   </span>
-                  <span className="legend-amt">{formatMoney(c.amount, currency)}</span>
-                </li>
-              ))}
-            </ul>
+                  <span className="bd-amt">{formatMoney(c.amount, currency)}</span>
+                </div>
+                <div className="bd-track">
+                  <div className="bd-fill" style={{ width: `${(c.amount / maxAmt) * 100}%` }} />
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

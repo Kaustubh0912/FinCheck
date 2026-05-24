@@ -5,8 +5,8 @@ import { mkdirSync } from "node:fs";
 import { faIndianRupeeSign } from "@fortawesome/free-solid-svg-icons";
 
 const [gw, gh, , , pathData] = faIndianRupeeSign.icon;
-const LIME = "#e6ff4d";
-const INK = "#0a0a0c";
+const BG = "#1c1b18"; // ink
+const FG = "#f5f2eb"; // ivory
 const OUT = "client/public";
 mkdirSync(OUT, { recursive: true });
 
@@ -15,8 +15,8 @@ function makeSvg({ size = 512, radius = 0, glyphRatio = 0.5 } = {}) {
   const tx = (size - gw * s) / 2;
   const ty = (size - gh * s) / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" rx="${radius}" fill="${LIME}"/>
-  <g transform="translate(${tx} ${ty}) scale(${s})"><path d="${pathData}" fill="${INK}"/></g>
+  <rect width="${size}" height="${size}" rx="${radius}" fill="${BG}"/>
+  <g transform="translate(${tx} ${ty}) scale(${s})"><path d="${pathData}" fill="${FG}"/></g>
 </svg>`;
 }
 

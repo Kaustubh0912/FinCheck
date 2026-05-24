@@ -3,6 +3,8 @@ import { useAuth } from "../auth/AuthContext";
 import { useCategories } from "../api/hooks";
 import { api, errMessage } from "../api/client";
 import { Icon } from "../lib/icons";
+import { useTheme } from "../lib/theme";
+import { useInstallPrompt } from "../lib/useInstall";
 import { CategorySheet } from "../components/CategorySheet";
 import type { Category, CategoryKind } from "../lib/types";
 
@@ -11,6 +13,8 @@ const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 export function Settings() {
   const { user, logout, setUser } = useAuth();
   const { data: categories = [] } = useCategories();
+  const [theme, setTheme] = useTheme();
+  const { canInstall, install, installed, isIOS } = useInstallPrompt();
 
   const [name, setName] = useState(user?.name ?? "");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -110,6 +114,18 @@ export function Settings() {
       </section>
 
       <section className="card">
+        <h2 className="card-title">Appearance</h2>
+        <div className="theme-toggle">
+          <button className={theme === "light" ? "active" : ""} onClick={() => setTheme("light")}>
+            <Icon name="sun" /> Light
+          </button>
+          <button className={theme === "dark" ? "active" : ""} onClick={() => setTheme("dark")}>
+            <Icon name="moon" /> Dark
+          </button>
+        </div>
+      </section>
+
+      <section className="card">
         <div className="card-head">
           <h2 className="card-title">Expense categories</h2>
           <button className="btn btn-pill sm" onClick={() => openNewCat("expense")}>
@@ -128,6 +144,25 @@ export function Settings() {
         </div>
         <div className="chip-grid">{income.map(catChip)}</div>
       </section>
+
+      {!installed && (
+        <section className="card">
+          <h2 className="card-title">Install app</h2>
+          {canInstall ? (
+            <button className="btn btn-primary" onClick={install}>
+              <Icon name="download" /> Install FinCheck
+            </button>
+          ) : isIOS ? (
+            <p className="muted">
+              In Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong> to install FinCheck.
+            </p>
+          ) : (
+            <p className="muted">
+              Open your browser menu and choose <strong>Install app</strong> / <strong>Add to Home Screen</strong>.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="card">
         <h2 className="card-title">Data</h2>
