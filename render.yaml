@@ -1,0 +1,29 @@
+# Render Blueprint — deploys FinCheck as a single web service:
+# the Express server serves both the /api routes and the built React app.
+#
+# Usage: Render Dashboard → New → Blueprint → select this repo.
+# Then set DATABASE_URL (your MongoDB Atlas string) in the dashboard.
+services:
+  - type: web
+    name: fincheck
+    runtime: node
+    plan: free
+    region: oregon
+    # --include=dev so build tools (vite, tsc, prisma) install even when
+    # NODE_ENV=production. Builds the API (tsc) + the client (vite build).
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
+      - key: NODE_ENV
+        value: production
+      # Set this in the Render dashboard (secret) — your MongoDB Atlas URI,
+      # e.g. mongodb+srv://user:pass@cluster0.xxx.mongodb.net/fincheck
+      - key: DATABASE_URL
+        sync: false
+      # Auto-generated strong secret for signing JWTs.
+      - key: JWT_SECRET
+        generateValue: true

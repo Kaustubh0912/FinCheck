@@ -2,7 +2,12 @@ import axios from "axios";
 
 export const TOKEN_KEY = "fincheck_token";
 
-export const api = axios.create({ baseURL: "/api" });
+// In dev (and single-service prod) the client and API share an origin, so "/api"
+// works. When the frontend is deployed separately (e.g. Vercel) point it at the
+// backend by setting VITE_API_URL, e.g. https://fincheck.onrender.com/api
+const baseURL = import.meta.env.VITE_API_URL?.trim() || "/api";
+
+export const api = axios.create({ baseURL });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
