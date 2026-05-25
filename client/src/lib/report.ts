@@ -29,6 +29,10 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) + "..." : s;
+}
+
 function accountText(t: Transaction): string {
   if (t.type === "transfer") return `${t.fromAccount?.name ?? "?"} -> ${t.toAccount?.name ?? "?"}`;
   if (t.type === "income") return t.toAccount?.name ?? "?";
@@ -129,24 +133,44 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 28;
 
-  // ---- Spending by category ----
+  // ---- Spending by category (horizontal bar chart) ----
   if (summary.expense > 0 && summary.byCategory.length) {
     sectionTitle(`Spending by category — ${periodLabel}`);
-    autoTable(doc, {
-      startY: y + 4,
-      margin: { left: M, right: M },
-      theme: "plain",
-      head: [["Category", "Amount", "Share"]],
-      body: summary.byCategory.map((c) => [
-        c.name,
-        money(c.amount, cur),
-        `${Math.round((c.amount / summary.expense) * 100)}%`,
-      ]),
-      headStyles,
-      bodyStyles: baseBody,
-      columnStyles: { 1: { halign: "right", font: "times" }, 2: { halign: "right", textColor: MUTED } },
+    y += 14;
+    const cats = summary.byCategory.slice(0, 8);
+    const maxAmt = Math.max(...cats.map((c) => c.amount));
+    const barX = M + 138;
+    const barMaxW = pageW - M - barX - 124;
+    cats.forEach((c) => {
+      if (y > pageH - 72) {
+        doc.addPage();
+        y = 58;
+      }
+      const pct = Math.round((c.amount / summary.expense) * 100);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...INK);
+      doc.text(truncate(c.name, 20), M, y + 7);
+      // track
+      doc.setFillColor(...LINE);
+      doc.roundedRect(barX, y, barMaxW, 7, 2, 2, "F");
+      // fill (proportional to the largest category)
+      const w = Math.max(2, (c.amount / maxAmt) * barMaxW);
+      doc.setFillColor(...GREEN);
+      doc.roundedRect(barX, y, w, 7, 2, 2, "F");
+      // percentage label just past the bar
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...MUTED);
+      doc.text(`${pct}%`, barX + barMaxW + 6, y + 7);
+      // amount, right-aligned
+      doc.setFont("times", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...INK);
+      doc.text(money(c.amount, cur), pageW - M, y + 7, { align: "right" });
+      y += 22;
     });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 28;
+    y += 12;
   }
 
   // ---- Transactions ----

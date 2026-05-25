@@ -90,6 +90,53 @@ export function toYmd(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+}
+
+export interface SmartRange {
+  from: Date;
+  to: Date;
+}
+
+/** Parse a date range. Sides are split on ".." and each parsed with parseSmartDate:
+ *    "1.1..t"      -> 1 Jan (this year) .. today
+ *    "1.4..30.4"   -> 1 Apr .. 30 Apr (this year)
+ *    "1.1.26..t"   -> 1 Jan 2026 .. today
+ *    "1.1.."        -> 1 Jan .. today   (empty right side = today)
+ *    "1.1"         -> 1 Jan .. today    (no "..", single date = since then)
+ *  Reversed ranges are auto-swapped. Returns whole-day boundaries (00:00 .. 23:59). */
+export function parseSmartRange(raw: string, base = new Date()): SmartRange | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const idx = s.indexOf("..");
+  const fromStr = idx >= 0 ? s.slice(0, idx).trim() : s;
+  const toStr = idx >= 0 ? s.slice(idx + 2).trim() : "";
+  if (!fromStr) return null;
+
+  const fromD = parseSmartDate(fromStr, base);
+  if (!fromD) return null;
+  const toD = toStr ? parseSmartDate(toStr, base) : base;
+  if (!toD) return null;
+
+  let from = startOfDay(fromD);
+  let to = endOfDay(toD);
+  if (from.getTime() > to.getTime()) {
+    from = startOfDay(toD);
+    to = endOfDay(fromD);
+  }
+  return { from, to };
+}
+
+export function rangeLabel(from: Date, to: Date): string {
+  const f = friendlyDate(toYmd(from));
+  const t = friendlyDate(toYmd(to));
+  return f === t ? f : `${f} – ${t}`;
+}
+
 /** "1 Jan 2026" — or "Thu, 1 Jan 2026" with the weekday. Day-first, locale-independent. */
 export function friendlyDate(ymd: string, withWeekday = false): string {
   const d = new Date(ymd + "T12:00:00");

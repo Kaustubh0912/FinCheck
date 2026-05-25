@@ -3,10 +3,11 @@ import { useAuth } from "../auth/AuthContext";
 import { useCategories } from "../api/hooks";
 import { api, errMessage } from "../api/client";
 import { Icon } from "../lib/icons";
-import { monthLabel, monthRange } from "../lib/format";
+import { parseSmartRange, rangeLabel } from "../lib/date";
 import { useTheme } from "../lib/theme";
 import { useInstallPrompt } from "../lib/useInstall";
 import { CategorySheet } from "../components/CategorySheet";
+import { SmartRangeInput } from "../components/SmartRangeInput";
 import type { Category, CategoryKind } from "../lib/types";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
@@ -21,6 +22,7 @@ export function Settings() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [rangeText, setRangeText] = useState("1..t");
 
   const [catSheet, setCatSheet] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | undefined>();
@@ -45,19 +47,24 @@ export function Settings() {
   }
 
   async function downloadReport() {
+    const range = parseSmartRange(rangeText);
+    if (!range) {
+      setProfileMsg("Enter a valid period, e.g. 1.1..t");
+      return;
+    }
     setReporting(true);
     try {
-      const range = monthRange(new Date());
+      const params = { from: range.from.toISOString(), to: range.to.toISOString() };
       const [sum, txns] = await Promise.all([
-        api.get("/summary", { params: range }),
-        api.get("/transactions", { params: { ...range, limit: 500 } }),
+        api.get("/summary", { params }),
+        api.get("/transactions", { params: { ...params, limit: 500 } }),
       ]);
       const { generateReport } = await import("../lib/report");
       generateReport({
         user: { name: user?.name ?? "", currency: user?.currency ?? "INR" },
         summary: sum.data,
         transactions: txns.data,
-        periodLabel: monthLabel(),
+        periodLabel: rangeLabel(range.from, range.to),
       });
     } catch (e) {
       setProfileMsg(errMessage(e));
@@ -171,7 +178,8 @@ export function Settings() {
       )}
 
       <section className="card">
-        <h2 className="card-title">Data</h2>
+        <h2 className="card-title">Report</h2>
+        <SmartRangeInput value={rangeText} onChange={setRangeText} />
         <button className="btn btn-ghost" onClick={downloadReport} disabled={reporting}>
           <Icon name="download" /> {reporting ? "Preparing report…" : "Download PDF report"}
         </button>
