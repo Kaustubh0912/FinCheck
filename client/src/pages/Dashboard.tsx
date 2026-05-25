@@ -25,7 +25,7 @@ export function Dashboard() {
   const maxAmt = Math.max(1, ...cats.map((c) => c.amount));
 
   return (
-    <div className="page">
+    <div className="page dashboard">
       <header className="page-head">
         <div>
           <p className="hello">Hello, {user?.name?.split(" ")[0] ?? "there"}</p>
@@ -47,68 +47,74 @@ export function Dashboard() {
         </div>
       </section>
 
-      <div className="month-switch-wrap">
-        <div className="month-switch">
-          <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
-            <Icon name="chevron-left" />
-          </button>
-          <span>{monthLabel(monthDate)}</span>
-          <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
-            <Icon name="chevron-right" />
-          </button>
-        </div>
-      </div>
+      <div className="dash-cols">
+        <div className="dash-main">
+          <div className="month-switch-wrap">
+            <div className="month-switch">
+              <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+                <Icon name="chevron-left" />
+              </button>
+              <span>{monthLabel(monthDate)}</span>
+              <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
+                <Icon name="chevron-right" />
+              </button>
+            </div>
+          </div>
 
-      <div className="stat-row">
-        <div className="stat-card">
-          <span className="stat-label">Income</span>
-          <span className="stat-value amt-income">{formatMoney(summary?.income ?? 0, currency)}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Spent</span>
-          <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
-        </div>
-      </div>
+          <div className="stat-row">
+            <div className="stat-card">
+              <span className="stat-label">Income</span>
+              <span className="stat-value amt-income">{formatMoney(summary?.income ?? 0, currency)}</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-label">Spent</span>
+              <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
+            </div>
+          </div>
 
-      {cats.length > 0 && (
-        <section className="card">
-          <h2 className="card-title">Where it went</h2>
-          <div className="breakdown">
-            {cats.map((c) => (
-              <div className="bd-row" key={c.categoryId ?? c.name}>
-                <div className="bd-head">
-                  <span className="bd-name">
-                    <Icon name={c.icon} style={{ color: c.color }} />
-                    <span>{c.name}</span>
-                  </span>
-                  <span className="bd-amt">{formatMoney(c.amount, currency)}</span>
-                </div>
-                <div className="bd-track">
-                  <div className="bd-fill" style={{ width: `${(c.amount / maxAmt) * 100}%` }} />
-                </div>
+          {cats.length > 0 && (
+            <section className="card">
+              <h2 className="card-title">Where it went</h2>
+              <div className="breakdown">
+                {cats.map((c) => (
+                  <div className="bd-row" key={c.categoryId ?? c.name}>
+                    <div className="bd-head">
+                      <span className="bd-name">
+                        <Icon name={c.icon} style={{ color: c.color }} />
+                        <span>{c.name}</span>
+                      </span>
+                      <span className="bd-amt">{formatMoney(c.amount, currency)}</span>
+                    </div>
+                    <div className="bd-track">
+                      <div className="bd-fill" style={{ width: `${(c.amount / maxAmt) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="card">
-        <div className="card-head">
-          <h2 className="card-title">Recent activity</h2>
-          <Link to="/transactions" className="link">
-            See all
-          </Link>
+            </section>
+          )}
         </div>
-        {recent.length === 0 ? (
-          <p className="muted center pad">No transactions yet. Tap the + button to add your first one.</p>
-        ) : (
-          <div className="txn-list">
-            {recent.map((t) => (
-              <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
-            ))}
-          </div>
-        )}
-      </section>
+
+        <div className="dash-aside">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="card-title">Recent activity</h2>
+              <Link to="/transactions" className="link">
+                See all
+              </Link>
+            </div>
+            {recent.length === 0 ? (
+              <p className="muted center pad">No transactions yet. Tap the + button to add your first one.</p>
+            ) : (
+              <div className="txn-list">
+                {recent.map((t) => (
+                  <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
     </div>

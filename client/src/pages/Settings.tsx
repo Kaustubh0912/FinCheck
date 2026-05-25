@@ -90,11 +90,12 @@ export function Settings() {
   );
 
   return (
-    <div className="page">
+    <div className="page settings">
       <header className="page-head">
         <h1>Settings</h1>
       </header>
 
+      <div className="settings-cards">
       <section className="card">
         <h2 className="card-title">Profile</h2>
         <div className="field">
@@ -184,6 +185,7 @@ export function Settings() {
           <Icon name="download" /> {reporting ? "Preparing report…" : "Download PDF report"}
         </button>
       </section>
+      </div>
 
       <button className="btn btn-ghost-danger full" onClick={logout}>
         <Icon name="logout" /> Log out

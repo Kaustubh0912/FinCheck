@@ -545,11 +545,121 @@ a { color: inherit; text-decoration: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-/* ===== Desktop ===== */
+/* ===== Side nav (desktop rail) ===== */
+/* Hidden on mobile; the floating pill nav is used there instead. */
+.sidenav { display: none; }
+/* Desktop layout wrappers — transparent on mobile so the stack is untouched. */
+.dash-cols, .dash-main, .dash-aside, .settings-cards { display: contents; }
+
+/* ===== Tablet (still pill nav, slightly roomier) ===== */
 @media (min-width: 720px) {
-  .app-content { max-width: 600px; padding-top: 40px; }
+  .app-content { max-width: 620px; padding-top: 40px; }
   .sheet-backdrop { align-items: center; }
   .sheet { border-radius: var(--radius-lg); max-height: 88vh; border-bottom: 1px solid var(--line); animation: pop 0.2s ease; }
   .sheet-handle { display: none; }
 }
 @keyframes pop { from { transform: scale(0.97); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ===== Desktop (left rail + multi-column) ===== */
+@media (min-width: 960px) {
+  .pillnav { display: none; }
+
+  .sidenav {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 248px;
+    padding: 30px 20px calc(24px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    z-index: 50;
+  }
+  .sidenav-brand { display: flex; align-items: center; gap: 11px; padding: 4px 6px 22px; }
+  .sidenav-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: grid; place-content: center;
+    background: var(--contrast); color: var(--on-contrast); font-size: 1rem;
+  }
+  .sidenav-word { font-size: 1.3rem; font-weight: 500; letter-spacing: -0.01em; }
+  .sidenav-add {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    border: none; border-radius: 12px; padding: 13px;
+    background: var(--accent); color: var(--on-accent);
+    font-weight: 600; font-size: 0.92rem;
+    box-shadow: 0 6px 18px rgba(31, 81, 50, 0.22);
+    transition: background 0.15s ease, transform 0.08s ease;
+  }
+  .sidenav-add:hover { background: var(--accent-press); }
+  .sidenav-add:active { transform: scale(0.98); }
+  .sidenav-links { display: flex; flex-direction: column; gap: 2px; margin-top: 18px; }
+  .sidenav-link {
+    display: flex; align-items: center; gap: 13px;
+    padding: 11px 13px; border-radius: 11px;
+    color: var(--ink-soft); font-weight: 500; font-size: 0.95rem;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .sidenav-link:hover { background: var(--bg-2); color: var(--ink); }
+  .sidenav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .sidenav-link-icon { width: 18px; text-align: center; font-size: 0.95em; }
+
+  /* User identity anchored to the bottom of the rail */
+  .sidenav-foot {
+    margin-top: auto;
+    display: flex; align-items: center; gap: 11px;
+    padding: 12px 8px 4px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-soft);
+    transition: color 0.15s ease;
+  }
+  .sidenav-foot:hover { color: var(--ink); }
+  .sidenav-avatar {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-content: center;
+    background: var(--accent-soft); color: var(--accent);
+    font-family: var(--serif); font-size: 1rem; font-weight: 500;
+  }
+  .sidenav-user { display: grid; min-width: 0; }
+  .sidenav-user-name { font-size: 0.88rem; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidenav-user-mail { font-size: 0.74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Content sits against the rail and reads left-to-right like a desktop app */
+  .app-content {
+    margin-left: 248px;
+    max-width: none;
+    padding: 48px 56px calc(48px + env(safe-area-inset-bottom));
+  }
+  .page { max-width: 760px; }
+  .page-head h1 { font-size: 2.3rem; }
+
+  /* Dashboard: full-width hero, then two columns */
+  .page.dashboard { max-width: 1280px; }
+  .page.dashboard .networth-value { font-size: 3.9rem; }
+  .dash-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 30px 52px;
+    align-items: start;
+  }
+  .dash-main, .dash-aside { display: flex; flex-direction: column; gap: 30px; }
+  .month-switch-wrap { justify-content: flex-start; }
+  /* Columns separate by whitespace, not stacked rules, under the hero */
+  .dash-cols .card { border-top: none; padding-top: 0; }
+
+  /* Settings: cards in two columns, full-width actions below */
+  .page.settings { max-width: 1040px; }
+  .settings-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 52px;
+    align-items: start;
+  }
+  .page.settings > .btn-ghost-danger.full { width: auto; max-width: 260px; }
+  .page.settings > .version { text-align: left; }
+}
+
+/* ===== Wide desktop — keep content from sprawling ===== */
+@media (min-width: 1280px) {
+  .app-content { padding-left: 72px; padding-right: 72px; }
+}
