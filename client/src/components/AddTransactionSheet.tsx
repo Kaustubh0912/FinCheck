@@ -74,6 +74,21 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Enter submits from any input; buttons keep their native Enter-to-click behavior.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "BUTTON" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      submit();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing]);
+
   function submit() {
     setError("");
     const value = Number(amount);
