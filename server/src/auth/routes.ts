@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../db";
-import { loginSchema, registerSchema } from "../lib/validate";
+import { loginSchema, registerSchema, changePasswordSchema } from "../lib/validate";
 import { seedUserDefaults } from "../lib/seed";
 import { requireAuth, signToken, type AuthedRequest } from "./middleware";
 
@@ -65,4 +65,29 @@ authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
     },
   });
   res.json({ user: publicUser(user) });
+});
+
+authRouter.patch("/me/password", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = changePasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    return;
+  }
+  const { currentPassword, newPassword } = parsed.data;
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Current password is incorrect" });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: req.userId },
+    data: { passwordHash },
+  });
+  res.json({ message: "Password updated successfully" });
 });

@@ -8,9 +8,8 @@ import { useTheme } from "../lib/theme";
 import { useInstallPrompt } from "../lib/useInstall";
 import { CategorySheet } from "../components/CategorySheet";
 import { SmartRangeInput } from "../components/SmartRangeInput";
+import { PasswordSheet } from "../components/PasswordSheet";
 import type { Category, CategoryKind } from "../lib/types";
-
-const CURRENCIES = ["INR", "USD", "EUR", "GBP"];
 
 export function Settings() {
   const { user, logout, setUser } = useAuth();
@@ -28,13 +27,20 @@ export function Settings() {
   const [editingCat, setEditingCat] = useState<Category | undefined>();
   const [newKind, setNewKind] = useState<CategoryKind>("expense");
 
-  async function saveProfile(currency?: string) {
+  // Password change state
+  const [passwordSheetOpen, setPasswordSheetOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState("");
+
+  async function saveProfile() {
     setSavingProfile(true);
     setProfileMsg("");
     try {
       const res = await api.patch<{ user: typeof user }>("/auth/me", {
         name,
-        ...(currency ? { currency } : {}),
       });
       if (res.data.user) setUser(res.data.user);
       setProfileMsg("Saved");
@@ -43,6 +49,32 @@ export function Settings() {
       setProfileMsg(errMessage(e));
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function changePassword() {
+    setChangingPassword(true);
+    setPasswordMsg("");
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg("New passwords do not match");
+      setChangingPassword(false);
+      return;
+    }
+    try {
+      await api.patch("/auth/me/password", {
+        currentPassword,
+        newPassword,
+      });
+      setPasswordMsg("Password changed successfully");
+      // Clear the password fields and close sheet
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSheetOpen(false);
+    } catch (e) {
+      setPasswordMsg(errMessage(e));
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -113,18 +145,10 @@ export function Settings() {
       </section>
 
       <section className="card">
-        <h2 className="card-title">Currency</h2>
-        <div className="chip-row">
-          {CURRENCIES.map((c) => (
-            <button
-              key={c}
-              className={`chip ${user?.currency === c ? "chip-active" : ""}`}
-              onClick={() => saveProfile(c)}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <h2 className="card-title">Change Password</h2>
+        <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
+          <Icon name="lock" /> Change Password
+        </button>
       </section>
 
       <section className="card">
@@ -194,6 +218,19 @@ export function Settings() {
       <p className="muted center version">FinCheck · v0.1</p>
 
       <CategorySheet open={catSheet} editing={editingCat} defaultKind={newKind} onClose={() => setCatSheet(false)} />
+      <PasswordSheet
+        open={passwordSheetOpen}
+        onClose={() => setPasswordSheetOpen(false)}
+        currentPassword={currentPassword}
+        setCurrentPassword={setCurrentPassword}
+        newPassword={newPassword}
+        setNewPassword={setNewPassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
+        changingPassword={changingPassword}
+        passwordMsg={passwordMsg}
+        changePassword={changePassword}
+      />
     </div>
   );
 }
