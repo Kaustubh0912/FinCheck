@@ -1,4 +1,5 @@
-import { prisma } from "../db";
+import mongoose from "mongoose";
+import { Account, Transaction } from "../db";
 
 export interface AccountWithBalance {
   id: string;
@@ -14,25 +15,28 @@ export interface AccountWithBalance {
 
 /** Compute live balances for all of a user's accounts. */
 export async function accountsWithBalances(userId: string): Promise<AccountWithBalance[]> {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
   const [accounts, inflow, outflow] = await Promise.all([
-    prisma.account.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
-    prisma.transaction.groupBy({
-      by: ["toAccountId"],
-      where: { userId, type: { in: ["income", "transfer"] }, toAccountId: { not: null } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.groupBy({
-      by: ["fromAccountId"],
-      where: { userId, type: { in: ["expense", "transfer"] }, fromAccountId: { not: null } },
-      _sum: { amount: true },
-    }),
+    Account.find({ userId }).sort({ createdAt: 1 }),
+    Transaction.aggregate([
+      { $match: { userId: userObjectId, type: { $in: ["income", "transfer"] }, toAccountId: { $ne: null } } },
+      { $group: { _id: "$toAccountId", amount: { $sum: "$amount" } } },
+    ]),
+    Transaction.aggregate([
+      { $match: { userId: userObjectId, type: { $in: ["expense", "transfer"] }, fromAccountId: { $ne: null } } },
+      { $group: { _id: "$fromAccountId", amount: { $sum: "$amount" } } },
+    ]),
   ]);
 
-  const inMap = new Map(inflow.map((r) => [r.toAccountId as string, r._sum.amount ?? 0]));
-  const outMap = new Map(outflow.map((r) => [r.fromAccountId as string, r._sum.amount ?? 0]));
+  const inMap = new Map(inflow.map((r) => [r._id.toString(), r.amount ?? 0]));
+  const outMap = new Map(outflow.map((r) => [r._id.toString(), r.amount ?? 0]));
 
-  return accounts.map((a) => ({
-    ...a,
-    balance: a.openingBalance + (inMap.get(a.id) ?? 0) - (outMap.get(a.id) ?? 0),
-  }));
+  return accounts.map((a) => {
+    const doc = a.toJSON();
+    return {
+      ...doc,
+      balance: doc.openingBalance + (inMap.get(doc.id) ?? 0) - (outMap.get(doc.id) ?? 0),
+    };
+  });
 }

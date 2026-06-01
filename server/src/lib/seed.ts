@@ -1,4 +1,4 @@
-import { prisma } from "../db";
+import { Category, Account } from "../db";
 
 /** Default categories + a starter Cash account created for every new user. */
 const DEFAULT_CATEGORIES: { name: string; kind: "income" | "expense"; icon: string; color: string }[] = [
@@ -21,10 +21,10 @@ const DEFAULT_CATEGORIES: { name: string; kind: "income" | "expense"; icon: stri
 ];
 
 export async function seedUserDefaults(userId: string): Promise<void> {
-  await prisma.category.createMany({
-    data: DEFAULT_CATEGORIES.map((c) => ({ ...c, userId })),
-  });
-  await prisma.account.create({
-    data: { userId, name: "Cash", type: "cash", icon: "cash", color: "#16a34a" },
+  await Category.insertMany(
+    DEFAULT_CATEGORIES.map((c) => ({ ...c, userId }))
+  );
+  await Account.create({
+    userId, name: "Cash", type: "cash", icon: "cash", color: "#16a34a",
   });
 }

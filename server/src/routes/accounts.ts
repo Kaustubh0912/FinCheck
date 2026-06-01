@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { prisma } from "../db";
+import { Account, Transaction } from "../db";
 import { requireAuth, type AuthedRequest } from "../auth/middleware";
 import { accountSchema, accountUpdateSchema, toMinor } from "../lib/validate";
 import { accountsWithBalances } from "../lib/balances";
@@ -18,10 +18,13 @@ accountsRouter.post("/", async (req: AuthedRequest, res) => {
     return;
   }
   const { openingBalance, ...rest } = parsed.data;
-  const account = await prisma.account.create({
-    data: { ...rest, openingBalance: toMinor(openingBalance), userId: req.userId! },
+  const account = await Account.create({
+    ...rest,
+    openingBalance: toMinor(openingBalance),
+    userId: req.userId,
   });
-  res.status(201).json({ ...account, balance: account.openingBalance });
+  // Mongoose doc spreading requires toJSON() or toObject()
+  res.status(201).json({ ...account.toJSON(), balance: account.openingBalance });
 });
 
 accountsRouter.patch("/:id", async (req: AuthedRequest, res) => {
@@ -30,27 +33,29 @@ accountsRouter.patch("/:id", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
     return;
   }
-  const owned = await prisma.account.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+  const owned = await Account.findOne({ _id: req.params.id, userId: req.userId });
   if (!owned) {
     res.status(404).json({ error: "Account not found" });
     return;
   }
   const { openingBalance, ...rest } = parsed.data;
-  await prisma.account.update({
-    where: { id: req.params.id },
-    data: { ...rest, ...(openingBalance !== undefined ? { openingBalance: toMinor(openingBalance) } : {}) },
+  await Account.findByIdAndUpdate(req.params.id, {
+    ...rest,
+    ...(openingBalance !== undefined ? { openingBalance: toMinor(openingBalance) } : {}),
   });
-  res.json((await accountsWithBalances(req.userId!)).find((a) => a.id === req.params.id));
+  const balances = await accountsWithBalances(req.userId!);
+  res.json(balances.find((a) => a.id === req.params.id));
 });
 
 accountsRouter.delete("/:id", async (req: AuthedRequest, res) => {
-  const owned = await prisma.account.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+  const owned = await Account.findOne({ _id: req.params.id, userId: req.userId });
   if (!owned) {
     res.status(404).json({ error: "Account not found" });
     return;
   }
-  const txnCount = await prisma.transaction.count({
-    where: { userId: req.userId!, OR: [{ fromAccountId: req.params.id }, { toAccountId: req.params.id }] },
+  const txnCount = await Transaction.countDocuments({
+    userId: req.userId,
+    $or: [{ fromAccountId: req.params.id }, { toAccountId: req.params.id }],
   });
   if (txnCount > 0) {
     res.status(409).json({
@@ -58,6 +63,6 @@ accountsRouter.delete("/:id", async (req: AuthedRequest, res) => {
     });
     return;
   }
-  await prisma.account.delete({ where: { id: req.params.id } });
+  await Account.findByIdAndDelete(req.params.id);
   res.status(204).end();
 });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { prisma } from "../db";
+import { User } from "../db";
 import { loginSchema, registerSchema, changePasswordSchema } from "../lib/validate";
 import { seedUserDefaults } from "../lib/seed";
 import { requireAuth, signToken, type AuthedRequest } from "./middleware";
@@ -18,15 +18,13 @@ authRouter.post("/register", async (req, res) => {
     return;
   }
   const { email, name, password, currency } = parsed.data;
-  const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) {
     res.status(409).json({ error: "An account with that email already exists." });
     return;
   }
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({
-    data: { email: email.toLowerCase(), name, passwordHash, currency: currency ?? "INR" },
-  });
+  const user = await User.create({ email: email.toLowerCase(), name, passwordHash, currency: currency ?? "INR" });
   await seedUserDefaults(user.id);
   res.status(201).json({ token: signToken(user.id), user: publicUser(user) });
 });
@@ -38,7 +36,7 @@ authRouter.post("/login", async (req, res) => {
     return;
   }
   const { email, password } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await User.findOne({ email: email.toLowerCase() });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     res.status(401).json({ error: "Incorrect email or password." });
     return;
@@ -47,7 +45,7 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  const user = await User.findById(req.userId);
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -57,14 +55,15 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 
 authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   const { name, currency } = req.body ?? {};
-  const user = await prisma.user.update({
-    where: { id: req.userId },
-    data: {
+  const user = await User.findByIdAndUpdate(
+    req.userId,
+    {
       ...(typeof name === "string" && name.trim() ? { name: name.trim() } : {}),
       ...(typeof currency === "string" && currency.length === 3 ? { currency } : {}),
     },
-  });
-  res.json({ user: publicUser(user) });
+    { new: true }
+  );
+  res.json({ user: publicUser(user as any) });
 });
 
 authRouter.patch("/me/password", requireAuth, async (req: AuthedRequest, res) => {
@@ -74,7 +73,7 @@ authRouter.patch("/me/password", requireAuth, async (req: AuthedRequest, res) =>
     return;
   }
   const { currentPassword, newPassword } = parsed.data;
-  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  const user = await User.findById(req.userId);
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -85,9 +84,6 @@ authRouter.patch("/me/password", requireAuth, async (req: AuthedRequest, res) =>
     return;
   }
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  await prisma.user.update({
-    where: { id: req.userId },
-    data: { passwordHash },
-  });
+  await User.findByIdAndUpdate(req.userId, { passwordHash });
   res.json({ message: "Password updated successfully" });
 });

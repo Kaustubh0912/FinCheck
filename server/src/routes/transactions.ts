@@ -1,17 +1,10 @@
 import { Router } from "express";
-import type { Prisma } from "@prisma/client";
-import { prisma } from "../db";
+import { Transaction, Account, Category } from "../db";
 import { requireAuth, type AuthedRequest } from "../auth/middleware";
 import { transactionSchema, toMinor } from "../lib/validate";
 
 export const transactionsRouter = Router();
 transactionsRouter.use(requireAuth);
-
-const include = {
-  fromAccount: { select: { id: true, name: true, icon: true, color: true } },
-  toAccount: { select: { id: true, name: true, icon: true, color: true } },
-  category: { select: { id: true, name: true, icon: true, color: true, kind: true } },
-} satisfies Prisma.TransactionInclude;
 
 /** Verify that every referenced account/category belongs to the requesting user. */
 async function assertOwnership(
@@ -20,11 +13,11 @@ async function assertOwnership(
 ): Promise<string | null> {
   const accountIds = [ids.fromAccountId, ids.toAccountId].filter(Boolean) as string[];
   if (accountIds.length) {
-    const count = await prisma.account.count({ where: { userId, id: { in: accountIds } } });
+    const count = await Account.countDocuments({ userId, _id: { $in: accountIds } });
     if (count !== new Set(accountIds).size) return "Unknown account.";
   }
   if (ids.categoryId) {
-    const cat = await prisma.category.findFirst({ where: { userId, id: ids.categoryId } });
+    const cat = await Category.findOne({ userId, _id: ids.categoryId });
     if (!cat) return "Unknown category.";
   }
   return null;
@@ -32,21 +25,23 @@ async function assertOwnership(
 
 transactionsRouter.get("/", async (req: AuthedRequest, res) => {
   const { from, to, accountId, type, categoryId, limit } = req.query as Record<string, string>;
-  const where: Prisma.TransactionWhereInput = { userId: req.userId! };
+  const where: any = { userId: req.userId };
   if (type && ["income", "expense", "transfer"].includes(type)) where.type = type;
   if (categoryId) where.categoryId = categoryId;
-  if (accountId) where.OR = [{ fromAccountId: accountId }, { toAccountId: accountId }];
+  if (accountId) where.$or = [{ fromAccountId: accountId }, { toAccountId: accountId }];
   if (from || to) {
     where.date = {};
-    if (from) where.date.gte = new Date(from);
-    if (to) where.date.lte = new Date(to);
+    if (from) where.date.$gte = new Date(from);
+    if (to) where.date.$lte = new Date(to);
   }
-  const transactions = await prisma.transaction.findMany({
-    where,
-    include,
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    take: limit ? Math.min(Number(limit), 500) : undefined,
-  });
+  const take = limit ? Math.min(Number(limit), 500) : 500; // Provide a default limit for safety if we remove undefined
+  const transactions = await Transaction.find(where)
+    .sort({ date: -1, createdAt: -1 })
+    .limit(take)
+    .populate("fromAccount", "id name icon color")
+    .populate("toAccount", "id name icon color")
+    .populate("category", "id name icon color kind");
+  
   res.json(transactions);
 });
 
@@ -62,24 +57,32 @@ transactionsRouter.post("/", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: ownErr });
     return;
   }
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId: req.userId!,
-      type: d.type,
-      amount: toMinor(d.amount),
-      date: d.date ?? new Date(),
-      note: d.note ?? "",
-      fromAccountId: d.type === "income" ? null : d.fromAccountId ?? null,
-      toAccountId: d.type === "expense" ? null : d.toAccountId ?? null,
-      categoryId: d.type === "transfer" ? null : d.categoryId ?? null,
-    },
-    include,
+  
+  const fromAccountId = d.type === "income" ? null : d.fromAccountId ?? null;
+  const toAccountId = d.type === "expense" ? null : d.toAccountId ?? null;
+  const categoryId = d.type === "transfer" ? null : d.categoryId ?? null;
+
+  const transaction = await Transaction.create({
+    userId: req.userId,
+    type: d.type,
+    amount: toMinor(d.amount),
+    date: d.date ?? new Date(),
+    note: d.note ?? "",
+    fromAccountId,
+    toAccountId,
+    categoryId,
   });
-  res.status(201).json(transaction);
+
+  const populated = await Transaction.findById(transaction._id)
+    .populate("fromAccount", "id name icon color")
+    .populate("toAccount", "id name icon color")
+    .populate("category", "id name icon color kind");
+
+  res.status(201).json(populated);
 });
 
 transactionsRouter.patch("/:id", async (req: AuthedRequest, res) => {
-  const owned = await prisma.transaction.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+  const owned = await Transaction.findOne({ _id: req.params.id, userId: req.userId });
   if (!owned) {
     res.status(404).json({ error: "Transaction not found" });
     return;
@@ -95,28 +98,37 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: ownErr });
     return;
   }
-  const transaction = await prisma.transaction.update({
-    where: { id: req.params.id },
-    data: {
+  
+  const fromAccountId = d.type === "income" ? null : d.fromAccountId ?? null;
+  const toAccountId = d.type === "expense" ? null : d.toAccountId ?? null;
+  const categoryId = d.type === "transfer" ? null : d.categoryId ?? null;
+
+  const transaction = await Transaction.findByIdAndUpdate(
+    req.params.id,
+    {
       type: d.type,
       amount: toMinor(d.amount),
       date: d.date ?? owned.date,
       note: d.note ?? "",
-      fromAccountId: d.type === "income" ? null : d.fromAccountId ?? null,
-      toAccountId: d.type === "expense" ? null : d.toAccountId ?? null,
-      categoryId: d.type === "transfer" ? null : d.categoryId ?? null,
+      fromAccountId,
+      toAccountId,
+      categoryId,
     },
-    include,
-  });
+    { new: true }
+  )
+    .populate("fromAccount", "id name icon color")
+    .populate("toAccount", "id name icon color")
+    .populate("category", "id name icon color kind");
+
   res.json(transaction);
 });
 
 transactionsRouter.delete("/:id", async (req: AuthedRequest, res) => {
-  const owned = await prisma.transaction.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+  const owned = await Transaction.findOne({ _id: req.params.id, userId: req.userId });
   if (!owned) {
     res.status(404).json({ error: "Transaction not found" });
     return;
   }
-  await prisma.transaction.delete({ where: { id: req.params.id } });
+  await Transaction.findByIdAndDelete(req.params.id);
   res.status(204).end();
 });

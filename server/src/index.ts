@@ -3,6 +3,7 @@ import fs from "fs";
 import express from "express";
 import cors from "cors";
 import { env } from "./env";
+import { connectDb } from "./db";
 import { authRouter } from "./auth/routes";
 import { accountsRouter } from "./routes/accounts";
 import { categoriesRouter } from "./routes/categories";
@@ -53,7 +54,9 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: "Something went wrong on the server." });
 });
 
-app.listen(env.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
+connectDb().then(() => {
+  app.listen(env.port, () => {
+    // eslint-disable-next-line no-console
+    console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
+  });
 });
