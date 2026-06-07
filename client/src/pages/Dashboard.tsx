@@ -22,7 +22,7 @@ export function Dashboard() {
 
   // Fetch transactions for selected category and current month
   const { data: categoryTransactions = [], isLoading: catLoading } = useTransactions({
-    categoryId: selectedCategoryId,
+    categoryId: selectedCategoryId ?? undefined,
     from: range.from,
     to: range.to,
   });
