@@ -66,7 +66,7 @@ export const ICON_CHOICES: string[] = [
 
 export function accountTypeIcon(type: string): string {
   const map: Record<string, string> = {
-    bank: "bank", cash: "cash", card: "card", wallet: "wallet", investment: "invest", other: "box",
+    bank: "bank", cash: "cash", card: "card", wallet: "wallet", investment: "invest", savings: "piggy", other: "box",
   };
   return map[type] ?? "wallet";
 }

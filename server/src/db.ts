@@ -39,6 +39,7 @@ const accountSchema = new Schema(
     color: { type: String, default: "#6366f1" },
     icon: { type: String, default: "bank" },
     archived: { type: Boolean, default: false },
+    goalTarget: { type: Number, default: null }, // minor units
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Account" }
 );

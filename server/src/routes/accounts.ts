@@ -17,10 +17,11 @@ accountsRouter.post("/", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
     return;
   }
-  const { openingBalance, ...rest } = parsed.data;
+  const { openingBalance, goalTarget, ...rest } = parsed.data;
   const account = await Account.create({
     ...rest,
     openingBalance: toMinor(openingBalance),
+    goalTarget: goalTarget ? toMinor(goalTarget) : null,
     userId: req.userId,
   });
   // Mongoose doc spreading requires toJSON() or toObject()
@@ -38,10 +39,11 @@ accountsRouter.patch("/:id", async (req: AuthedRequest, res) => {
     res.status(404).json({ error: "Account not found" });
     return;
   }
-  const { openingBalance, ...rest } = parsed.data;
+  const { openingBalance, goalTarget, ...rest } = parsed.data;
   await Account.findByIdAndUpdate(req.params.id, {
     ...rest,
     ...(openingBalance !== undefined ? { openingBalance: toMinor(openingBalance) } : {}),
+    ...(goalTarget !== undefined ? { goalTarget: goalTarget ? toMinor(goalTarget) : null } : {}),
   });
   const balances = await accountsWithBalances(req.userId!);
   res.json(balances.find((a) => a.id === req.params.id));

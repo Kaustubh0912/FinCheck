@@ -1,0 +1,112 @@
+import { useEffect, useMemo, useState } from "react";
+import { Sheet } from "./Sheet";
+import { Icon } from "../lib/icons";
+import { useAccounts, useSaveTransaction } from "../api/hooks";
+import { currencySymbol, formatMoney } from "../lib/format";
+import { useAuth } from "../auth/AuthContext";
+import { errMessage } from "../api/client";
+import type { Account } from "../lib/types";
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  goal: Account;
+  mode: "add" | "withdraw";
+}
+
+export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
+  const { user } = useAuth();
+  const symbol = currencySymbol(user?.currency);
+  const { data: accounts = [] } = useAccounts();
+  const saveTxn = useSaveTransaction();
+
+  const [amount, setAmount] = useState("");
+  const [sourceAccountId, setSourceAccountId] = useState("");
+  const [error, setError] = useState("");
+
+  const otherAccounts = useMemo(
+    () => accounts.filter((a) => !a.archived && a.type !== "savings"),
+    [accounts]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    setAmount("");
+    setSourceAccountId(otherAccounts[0]?.id || "");
+    setError("");
+  }, [open, otherAccounts]);
+
+  function submit() {
+    setError("");
+    const value = Number(amount);
+    if (!value || value <= 0) return setError("Enter an amount greater than zero.");
+    if (!sourceAccountId) return setError(`Select an account to ${mode === "add" ? "transfer from" : "withdraw to"}.`);
+
+    saveTxn.mutate(
+      {
+        type: "saving",
+        amount: value,
+        date: new Date().toISOString(),
+        note: mode === "add" ? `Saved to ${goal.name}` : `Withdrawn from ${goal.name}`,
+        fromAccountId: mode === "add" ? sourceAccountId : goal.id,
+        toAccountId: mode === "add" ? goal.id : sourceAccountId,
+      },
+      {
+        onSuccess: () => onClose(),
+        onError: (e) => setError(errMessage(e)),
+      }
+    );
+  }
+
+  const title = mode === "add" ? `Contribute to ${goal.name}` : `Withdraw from ${goal.name}`;
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={title}
+      footer={
+        <button className="btn btn-primary grow" onClick={submit} disabled={saveTxn.isPending}>
+          {saveTxn.isPending ? "Processing..." : mode === "add" ? "Confirm Savings" : "Confirm Withdrawal"}
+        </button>
+      }
+    >
+      <div className="center" style={{ margin: "10px 0" }}>
+        <span className="account-icon" style={{ background: goal.color + "22", color: goal.color, width: 48, height: 48, fontSize: '1.4rem' }}>
+          <Icon name={goal.icon} />
+        </span>
+      </div>
+
+      <label className="amount-field">
+        <span className="amount-symbol">{symbol}</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={amount}
+          autoFocus
+          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+        />
+      </label>
+
+      <div className="field">
+        <label className="field-label">{mode === "add" ? "From account" : "To account"}</label>
+        <div className="chip-row">
+          {otherAccounts.map((a) => (
+            <button
+              key={a.id}
+              className={`chip ${sourceAccountId === a.id ? "chip-active" : ""}`}
+              style={sourceAccountId === a.id ? { borderColor: a.color, color: a.color } : undefined}
+              onClick={() => setSourceAccountId(a.id)}
+            >
+              <Icon name={a.icon} /> {a.name} ({formatMoney(a.balance, user?.currency || "INR")})
+            </button>
+          ))}
+        </div>
+        {otherAccounts.length === 0 && <p className="muted small">No other accounts available.</p>}
+      </div>
+
+      {error && <p className="form-error">{error}</p>}
+    </Sheet>
+  );
+}

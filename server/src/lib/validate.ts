@@ -17,12 +17,13 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-export const accountTypes = ["bank", "cash", "card", "wallet", "investment", "other"] as const;
+export const accountTypes = ["bank", "cash", "card", "wallet", "investment", "savings", "other"] as const;
 
 export const accountSchema = z.object({
   name: z.string().min(1).max(60),
   type: z.enum(accountTypes).default("bank"),
   openingBalance: z.number().finite().default(0), // major units
+  goalTarget: z.number().finite().nullable().default(null), // major units
   color: z.string().max(20).default("#6366f1"),
   icon: z.string().max(24).default("bank"),
 });
@@ -50,7 +51,7 @@ const baseTxn = z.object({
 });
 
 export const transactionSchema = baseTxn
-  .extend({ type: z.enum(["income", "expense", "transfer"]) })
+  .extend({ type: z.enum(["income", "expense", "transfer", "saving"]) })
   .superRefine((val, ctx) => {
     if (val.type === "income" && !val.toAccountId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: "Income needs an account to credit." });
@@ -58,9 +59,9 @@ export const transactionSchema = baseTxn
     if (val.type === "expense" && !val.fromAccountId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fromAccountId"], message: "Expense needs an account to debit." });
     }
-    if (val.type === "transfer") {
-      if (!val.fromAccountId) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fromAccountId"], message: "Transfer needs a source account." });
-      if (!val.toAccountId) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: "Transfer needs a destination account." });
+    if (val.type === "transfer" || val.type === "saving") {
+      if (!val.fromAccountId) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fromAccountId"], message: "This transaction needs a source account." });
+      if (!val.toAccountId) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: "This transaction needs a destination account." });
       if (val.fromAccountId && val.fromAccountId === val.toAccountId) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: "Source and destination must differ." });
       }

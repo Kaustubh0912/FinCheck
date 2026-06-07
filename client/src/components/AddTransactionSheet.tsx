@@ -43,7 +43,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
 
-  const liveAccounts = useMemo(() => accounts.filter((a) => !a.archived), [accounts]);
+  const liveAccounts = useMemo(() => accounts.filter((a) => !a.archived && a.type !== "savings"), [accounts]);
   const catsForType = useMemo(
     () => categories.filter((c) => c.kind === (type === "income" ? "income" : "expense")),
     [categories, type]

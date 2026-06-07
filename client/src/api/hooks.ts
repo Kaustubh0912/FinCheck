@@ -14,6 +14,7 @@ export interface AccountInput {
   name: string;
   type: string;
   openingBalance: number;
+  goalTarget: number | null;
   color: string;
   icon: string;
   archived?: boolean;

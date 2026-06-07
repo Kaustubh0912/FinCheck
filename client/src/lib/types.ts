@@ -1,5 +1,5 @@
-export type AccountType = "bank" | "cash" | "card" | "wallet" | "investment" | "other";
-export type TxnType = "income" | "expense" | "transfer";
+export type AccountType = "bank" | "cash" | "card" | "wallet" | "investment" | "savings" | "other";
+export type TxnType = "income" | "expense" | "transfer" | "saving";
 export type CategoryKind = "income" | "expense";
 
 export interface User {
@@ -14,6 +14,7 @@ export interface Account {
   name: string;
   type: AccountType;
   openingBalance: number; // minor units
+  goalTarget: number | null; // minor units
   color: string;
   icon: string;
   archived: boolean;

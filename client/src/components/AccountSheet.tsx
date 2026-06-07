@@ -14,6 +14,7 @@ const TYPES: { key: AccountType; label: string; icon: string }[] = [
   { key: "card", label: "Card", icon: "card" },
   { key: "wallet", label: "Wallet", icon: "wallet" },
   { key: "investment", label: "Invest", icon: "invest" },
+  { key: "savings", label: "Savings", icon: "piggy" },
   { key: "other", label: "Other", icon: "box" },
 ];
 
@@ -30,6 +31,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
   const [icon, setIcon] = useState("bank");
   const [color, setColor] = useState(COLORS[0]);
   const [openingBalance, setOpeningBalance] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
   const [archived, setArchived] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,6 +43,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
       setIcon(editing.icon);
       setColor(editing.color);
       setOpeningBalance(String(editing.openingBalance / 100));
+      setGoalTarget(editing.goalTarget ? String(editing.goalTarget / 100) : "");
       setArchived(editing.archived);
     } else {
       setName("");
@@ -48,6 +51,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
       setIcon("bank");
       setColor(COLORS[0]);
       setOpeningBalance("");
+      setGoalTarget("");
       setArchived(false);
     }
     setError("");
@@ -64,6 +68,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
         icon,
         color,
         openingBalance: Number(openingBalance) || 0,
+        goalTarget: goalTarget ? Number(goalTarget) : null,
         ...(editing ? { archived } : {}),
       },
       { onSuccess: () => onClose(), onError: (e) => setError(errMessage(e)) }
@@ -134,6 +139,21 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
             onChange={(e) => setOpeningBalance(e.target.value.replace(/[^0-9.-]/g, ""))}
           />
         </div>
+      </div>
+
+      <div className="field">
+        <label className="field-label">Goal target (Optional)</label>
+        <div className="amount-field small">
+          <span className="amount-symbol">{symbol}</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            placeholder="No goal set"
+            value={goalTarget}
+            onChange={(e) => setGoalTarget(e.target.value.replace(/[^0-9.-]/g, ""))}
+          />
+        </div>
+        <p className="date-hint">Set a target balance to track your savings progress.</p>
       </div>
 
       <div className="field">
