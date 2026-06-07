@@ -5,7 +5,7 @@ import { Icon } from "../lib/icons";
 interface SheetProps {
   open: boolean;
   onClose: () => void;
-  title?: string;
+  title?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 }

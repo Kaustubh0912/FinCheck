@@ -6,17 +6,26 @@ import { formatMoney, monthLabel, monthRange } from "../lib/format";
 import { Icon } from "../lib/icons";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
+import { Sheet } from "../components/Sheet";
 import type { Transaction } from "../lib/types";
 
 export function Dashboard() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
   const [monthDate, setMonthDate] = useState(new Date());
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const range = useMemo(() => monthRange(monthDate), [monthDate]);
 
   const { data: summary } = useSummary(range);
   const { data: recent = [] } = useTransactions({ limit: 6 });
   const [editing, setEditing] = useState<Transaction | null>(null);
+
+  // Fetch transactions for selected category and current month
+  const { data: categoryTransactions = [], isLoading: catLoading } = useTransactions({
+    categoryId: selectedCategoryId,
+    from: range.from,
+    to: range.to,
+  });
 
   const shiftMonth = (delta: number) =>
     setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
@@ -77,7 +86,19 @@ export function Dashboard() {
               <h2 className="card-title">Where it went</h2>
               <div className="breakdown">
                 {cats.map((c) => (
-                  <div className="bd-row" key={c.categoryId ?? c.name}>
+                  <div
+                    className={`bd-row${selectedCategoryId === c.categoryId ? " active" : ""}`}
+                    key={c.categoryId ?? c.name}
+                    onClick={() => setSelectedCategoryId(c.categoryId ?? null)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedCategoryId(c.categoryId ?? null);
+                      }
+                    }}
+                  >
                     <div className="bd-head">
                       <span className="bd-name">
                         <Icon name={c.icon} style={{ color: c.color }} />
@@ -115,6 +136,35 @@ export function Dashboard() {
           </section>
         </div>
       </div>
+
+      <Sheet
+        open={!!selectedCategoryId}
+        onClose={() => setSelectedCategoryId(null)}
+        title={
+          (() => {
+            const cat = cats.find((c) => c.categoryId === selectedCategoryId);
+            if (!cat) return "Transactions";
+            return (
+              <span className="row gap">
+                <Icon name={cat.icon} style={{ color: cat.color }} />
+                <span>{cat.name}</span>
+              </span>
+            );
+          })()
+        }
+      >
+        {catLoading ? (
+          <p className="center pad">Loading...</p>
+        ) : categoryTransactions.length === 0 ? (
+          <p className="muted center pad">No transactions for this category in the selected month.</p>
+        ) : (
+          <div className="txn-list">
+            {categoryTransactions.map((t) => (
+              <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
+            ))}
+          </div>
+        )}
+      </Sheet>
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
     </div>
