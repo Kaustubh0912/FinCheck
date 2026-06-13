@@ -23,11 +23,6 @@ export function currencySymbol(currency = "INR"): string {
   return parts.find((p) => p.type === "currency")?.value ?? currency;
 }
 
-export function formatDate(iso: string | Date): string {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
 export function formatDayHeading(iso: string): string {
   const d = new Date(iso);
   const today = new Date();

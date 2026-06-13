@@ -3,7 +3,9 @@ import { useAuth } from "../auth/AuthContext";
 import { useAccounts, useTransactions, type TxnFilters } from "../api/hooks";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
+import { ListsSheet } from "../components/ListsSheet";
 import { Dropdown } from "../components/Dropdown";
+import { Icon } from "../lib/icons";
 import { dayKey, formatDayHeading, formatMoney } from "../lib/format";
 import type { Transaction, TxnType } from "../lib/types";
 
@@ -22,6 +24,7 @@ export function Transactions() {
   const [type, setType] = useState<TxnType | "all">("all");
   const [accountId, setAccountId] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const [listsOpen, setListsOpen] = useState(false);
 
   const filters: TxnFilters = {
     type: type === "all" ? undefined : type,
@@ -44,6 +47,9 @@ export function Transactions() {
     <div className="page">
       <header className="page-head">
         <h1>Activity</h1>
+        <button className="icon-btn" onClick={() => setListsOpen(true)} aria-label="Search and filter">
+          <Icon name="search" />
+        </button>
       </header>
 
       <div className="type-toggle small">
@@ -96,6 +102,7 @@ export function Transactions() {
       )}
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
+      <ListsSheet open={listsOpen} onClose={() => setListsOpen(false)} />
     </div>
   );
 }

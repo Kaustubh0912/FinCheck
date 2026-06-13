@@ -21,7 +21,7 @@ export function Settings() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [reporting, setReporting] = useState(false);
-  const [rangeText, setRangeText] = useState("1..t");
+  const [reportRangeText, setReportRangeText] = useState("1..t");
 
   const [catSheet, setCatSheet] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | undefined>();
@@ -79,7 +79,7 @@ export function Settings() {
   }
 
   async function downloadReport() {
-    const range = parseSmartRange(rangeText);
+    const range = parseSmartRange(reportRangeText);
     if (!range) {
       setProfileMsg("Enter a valid period, e.g. 1.1..t");
       return;
@@ -204,7 +204,7 @@ export function Settings() {
 
       <section className="card">
         <h2 className="card-title">Report</h2>
-        <SmartRangeInput value={rangeText} onChange={setRangeText} />
+        <SmartRangeInput value={reportRangeText} onChange={setReportRangeText} />
         <button className="btn btn-ghost" onClick={downloadReport} disabled={reporting}>
           <Icon name="download" /> {reporting ? "Preparing report…" : "Download PDF report"}
         </button>
