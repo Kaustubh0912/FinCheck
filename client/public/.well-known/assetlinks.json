@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.example.fincheck",
+    "sha256_cert_fingerprints":
+    ["64:81:F9:91:05:F0:E5:87:81:39:F0:A3:F3:81:19:4B:3E:99:1C:3F:4B:E1:D8:B8:AA:B2:9E:18:94:99:07:71"]
+  }
+}]
