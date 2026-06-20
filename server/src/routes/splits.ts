@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Split, Transaction } from "../db";
+import { Split, Transaction, Account } from "../db";
 import { requireAuth, type AuthedRequest } from "../auth/middleware";
 import { createSplitSchema, repaySplitSchema, toMinor } from "../lib/validate";
 
@@ -71,21 +71,36 @@ splitsRouter.post("/:id/repay", async (req: AuthedRequest, res) => {
   }
 
   const { amount, toAccountId } = parsed.data;
-  const minorAmount = toMinor(amount);
+  let minorAmount = toMinor(amount);
+
+  const account = await Account.findOne({ _id: toAccountId, userId: req.userId });
+  if (!account) {
+    res.status(400).json({ error: "Account not found." });
+    return;
+  }
+
+  const targetToSettle = split.totalAmount - split.myShare;
+  const remainingOwed = targetToSettle - split.settledAmount;
+  
+  if (remainingOwed <= 0) {
+    res.status(400).json({ error: "This split is already fully settled." });
+    return;
+  }
+
+  const cappedAmount = Math.min(minorAmount, remainingOwed);
 
   // Create reimbursement transaction
   await Transaction.create({
     userId: req.userId,
     type: "reimbursement",
-    amount: minorAmount,
+    amount: cappedAmount,
     toAccountId,
     note: `Repayment for: ${split.splitNote || "Split"}`,
     date: new Date(),
   });
 
   // Update split
-  const newSettledAmount = split.settledAmount + minorAmount;
-  const targetToSettle = split.totalAmount - split.myShare;
+  const newSettledAmount = split.settledAmount + cappedAmount;
   
   split.settledAmount = newSettledAmount;
   if (newSettledAmount >= targetToSettle) {

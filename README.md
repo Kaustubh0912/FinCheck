@@ -17,24 +17,21 @@ balance plus every inflow minus every outflow, so the books always reconcile.
 | -------- | ----------------------------------------------------------- |
 | Client   | React + TypeScript + Vite, React Query, Recharts, light/dark |
 | Server   | Node + Express + TypeScript, JWT auth                       |
-| Database | MongoDB Atlas via Prisma ORM (mongodb connector)            |
+| Database | MongoDB Atlas via Mongoose                                  |
 
 ## Getting started
 
 ```bash
-# 1. Install all workspaces (also runs `prisma generate`)
+# 1. Install all workspaces
 npm install
 
-# 2. Set DATABASE_URL in server/.env to your MongoDB Atlas connection string,
-#    then push the schema + generate the client (run from the server folder):
-cd server && npx prisma db push && npx prisma generate && cd ..
+# 2. Set DATABASE_URL in server/.env to your MongoDB Atlas connection string
 
 # 3. Run the API (:4000) and the web app (:5173) together
 npm run dev
 ```
 
-> Run Prisma commands from `server/` (not the repo root) — the schema lives at
-> `server/prisma/schema.prisma`.
+> Schema lives at `server/src/db.ts`. No schema migration is needed with Mongoose.
 
 Then open **http://localhost:5173**, create an account, and start tracking.
 A starter _Cash_ account and a set of income/expense categories are created for you.
@@ -46,17 +43,15 @@ A starter _Cash_ account and a set of income/expense categories are created for 
 | `npm run dev`        | Run API + web together with hot reload (frees stale ports first)        |
 | `npm run dev:server` | API only                                                                |
 | `npm run dev:web`    | Web app only                                                            |
-| `npm run build`      | **Production build** — Prisma client + API (tsc) + web (Vite/PWA)       |
+| `npm run build`      | **Production build** — API (tsc) + web (Vite/PWA)                       |
 | `npm run start`      | **Run production** — serves API + the built web app, `NODE_ENV=production` (run `build` first) |
 | `npm run clean`      | Remove build artifacts (`server/dist`, `client/dist`, caches)           |
 | `npm run typecheck`  | Type-check both packages without emitting                               |
-| `npm run db:setup`   | Push the Prisma schema to MongoDB (creates collections + indexes)       |
-| `npm run db:studio`  | Open Prisma Studio to inspect the database                              |
 
 **Production in one place:**
 
 ```bash
-npm install        # installs deps + generates the Prisma client
+npm install        # installs deps
 npm run build      # builds the API and the web app
 npm run start      # serves everything on http://localhost:4000
 ```

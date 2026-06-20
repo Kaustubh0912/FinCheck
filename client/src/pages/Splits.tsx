@@ -12,6 +12,8 @@ export function Splits() {
   const isSettled = tab === "settled";
 
   const { data: splits = [], isLoading } = useSplits(isSettled);
+  const { data: accounts = [] } = useAccounts();
+  const liveAccounts = accounts.filter(a => !a.archived && a.type !== "savings");
 
   return (
     <div className="page splits">
@@ -34,7 +36,7 @@ export function Splits() {
           <p className="muted center pad">No {tab} splits found.</p>
         ) : (
           splits.map((split) => (
-            <SplitCard key={split.id} split={split} currency={currency} isSettled={isSettled} />
+            <SplitCard key={split.id} split={split} currency={currency} isSettled={isSettled} liveAccounts={liveAccounts} />
           ))
         )}
       </div>
@@ -42,14 +44,12 @@ export function Splits() {
   );
 }
 
-function SplitCard({ split, currency, isSettled }: { split: Split; currency: string; isSettled: boolean }) {
+function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split; currency: string; isSettled: boolean; liveAccounts: import("../lib/types").Account[] }) {
   const repaySplit = useRepaySplit();
-  const { data: accounts = [] } = useAccounts();
-  const liveAccounts = accounts.filter(a => !a.archived && a.type !== "savings");
 
   const [showRepay, setShowRepay] = useState(false);
   const [amount, setAmount] = useState("");
-  const [toAccountId, setToAccountId] = useState(liveAccounts[0]?.id || "");
+  const [toAccountId, setToAccountId] = useState(liveAccounts[0]?.id ?? "");
 
   const totalOwed = split.totalAmount - split.myShare;
   const progress = Math.min(100, (split.settledAmount / totalOwed) * 100);

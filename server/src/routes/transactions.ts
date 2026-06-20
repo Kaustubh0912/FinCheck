@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Transaction, Account, Category } from "../db";
+import { Transaction, Account, Category, Split } from "../db";
 import { requireAuth, type AuthedRequest } from "../auth/middleware";
 import { transactionSchema, toMinor } from "../lib/validate";
 
@@ -129,6 +129,7 @@ transactionsRouter.delete("/:id", async (req: AuthedRequest, res) => {
     res.status(404).json({ error: "Transaction not found" });
     return;
   }
+  await Split.deleteMany({ transactionId: req.params.id });
   await Transaction.findByIdAndDelete(req.params.id);
   res.status(204).end();
 });
