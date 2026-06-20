@@ -20,7 +20,7 @@ export async function accountsWithBalances(userId: string): Promise<AccountWithB
   const [accounts, inflow, outflow] = await Promise.all([
     Account.find({ userId }).sort({ createdAt: 1 }),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["income", "transfer", "saving"] }, toAccountId: { $ne: null } } },
+      { $match: { userId: userObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] }, toAccountId: { $ne: null } } },
       { $group: { _id: "$toAccountId", amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([

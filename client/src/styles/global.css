@@ -228,7 +228,18 @@ a { color: inherit; text-decoration: none; }
 .bd-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 .bd-amt { font-size: 0.98rem; white-space: nowrap; }
 .bd-track { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
-.bd-fill { height: 100%; background: var(--ink); border-radius: 2px; }
+.bd-fill { height: 100%; background: var(--ink); border-radius: 2px; transition: width 0.3s ease, background-color 0.3s ease; }
+
+/* ===== Budget Widget ===== */
+.budget-widget { gap: 12px; }
+.budget-hero { margin: 4px 0 2px; }
+.budget-allowance { font-size: 2.2rem; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); }
+.budget-per-day { font-size: 1.1rem; font-family: var(--font); font-style: italic; }
+.budget-meta { font-size: 0.85rem; margin-top: 4px; }
+.budget-check { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+.budget-check-result { display: flex; flex-direction: column; gap: 4px; }
+.budget-check-answer { font-size: 1.8rem; font-weight: 500; }
+
 
 /* ===== Transactions ===== */
 .txn-list { display: grid; }

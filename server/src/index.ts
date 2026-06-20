@@ -9,6 +9,7 @@ import { accountsRouter } from "./routes/accounts";
 import { categoriesRouter } from "./routes/categories";
 import { transactionsRouter } from "./routes/transactions";
 import { summaryRouter } from "./routes/summary";
+import { splitsRouter } from "./routes/splits";
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/accounts", accountsRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/transactions", transactionsRouter);
 app.use("/api/summary", summaryRouter);
+app.use("/api/splits", splitsRouter);
 
 // Unknown API routes return JSON (not the SPA shell).
 app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));

@@ -5,6 +5,7 @@ import { Icon } from "../lib/icons";
 const items = [
   { to: "/", name: "home", label: "Home" },
   { to: "/transactions", name: "activity", label: "Activity" },
+  { to: "/splits", name: "transfer", label: "Splits" },
   { to: "/accounts", name: "wallet", label: "Accounts" },
   { to: "/settings", name: "settings", label: "Settings" },
 ];

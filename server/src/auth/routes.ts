@@ -1,14 +1,14 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { User } from "../db";
-import { loginSchema, registerSchema, changePasswordSchema } from "../lib/validate";
+import { loginSchema, registerSchema, changePasswordSchema, profileUpdateSchema } from "../lib/validate";
 import { seedUserDefaults } from "../lib/seed";
 import { requireAuth, signToken, type AuthedRequest } from "./middleware";
 
 export const authRouter = Router();
 
-function publicUser(u: { id: string; email: string; name: string; currency: string }) {
-  return { id: u.id, email: u.email, name: u.name, currency: u.currency };
+function publicUser(u: { id: string; email: string; name: string; currency: string; monthlyBudget?: number | null }) {
+  return { id: u.id, email: u.email, name: u.name, currency: u.currency, monthlyBudget: u.monthlyBudget };
 }
 
 authRouter.post("/register", async (req, res) => {
@@ -54,13 +54,21 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
-  const { name, currency } = req.body ?? {};
+  const parsed = profileUpdateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
+    return;
+  }
+  const { name, currency, monthlyBudget } = parsed.data;
+
+  const updateData: any = {};
+  if (typeof name === "string" && name.trim()) updateData.name = name.trim();
+  if (typeof currency === "string" && currency.length === 3) updateData.currency = currency;
+  if (monthlyBudget !== undefined) updateData.monthlyBudget = monthlyBudget;
+
   const user = await User.findByIdAndUpdate(
     req.userId,
-    {
-      ...(typeof name === "string" && name.trim() ? { name: name.trim() } : {}),
-      ...(typeof currency === "string" && currency.length === 3 ? { currency } : {}),
-    },
+    updateData,
     { new: true }
   );
   res.json({ user: publicUser(user as any) });

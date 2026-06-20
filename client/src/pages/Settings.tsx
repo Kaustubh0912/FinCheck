@@ -18,6 +18,7 @@ export function Settings() {
   const { canInstall, install, installed, isIOS } = useInstallPrompt();
 
   const [name, setName] = useState(user?.name ?? "");
+  const [budgetInput, setBudgetInput] = useState(user?.monthlyBudget ? (user.monthlyBudget / 100).toString() : "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [reporting, setReporting] = useState(false);
@@ -39,8 +40,11 @@ export function Settings() {
     setSavingProfile(true);
     setProfileMsg("");
     try {
+      const budgetNum = parseFloat(budgetInput);
+      const monthlyBudget = !isNaN(budgetNum) ? Math.round(budgetNum * 100) : null;
       const res = await api.patch<{ user: typeof user }>("/auth/me", {
         name,
+        monthlyBudget,
       });
       if (res.data.user) setUser(res.data.user);
       setProfileMsg("Saved");
@@ -137,6 +141,16 @@ export function Settings() {
         <div className="field">
           <label className="field-label">Email</label>
           <input className="input" value={user?.email ?? ""} disabled />
+        </div>
+        <div className="field">
+          <label className="field-label">Monthly budget</label>
+          <input 
+            className="input" 
+            type="number" 
+            placeholder="Optional" 
+            value={budgetInput} 
+            onChange={(e) => setBudgetInput(e.target.value)} 
+          />
         </div>
         <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile}>
           {savingProfile ? "Saving…" : "Save profile"}

@@ -1,5 +1,5 @@
 export type AccountType = "bank" | "cash" | "card" | "wallet" | "investment" | "savings" | "other";
-export type TxnType = "income" | "expense" | "transfer" | "saving";
+export type TxnType = "income" | "expense" | "transfer" | "saving" | "reimbursement";
 export type CategoryKind = "income" | "expense";
 
 export interface User {
@@ -7,6 +7,19 @@ export interface User {
   email: string;
   name: string;
   currency: string;
+  monthlyBudget?: number | null;
+}
+
+export interface Split {
+  id: string;
+  transactionId: string;
+  totalAmount: number;      // minor units
+  myShare: number;          // minor units
+  splitNote: string;
+  settled: boolean;
+  settledAmount: number;    // minor units
+  createdAt: string;
+  transaction?: Transaction; // populated
 }
 
 export interface Account {

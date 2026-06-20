@@ -12,6 +12,12 @@ export const registerSchema = z.object({
   currency: z.string().length(3).optional(),
 });
 
+export const profileUpdateSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  currency: z.string().length(3).optional(),
+  monthlyBudget: z.number().nullable().optional(),
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -51,10 +57,10 @@ const baseTxn = z.object({
 });
 
 export const transactionSchema = baseTxn
-  .extend({ type: z.enum(["income", "expense", "transfer", "saving"]) })
+  .extend({ type: z.enum(["income", "expense", "transfer", "saving", "reimbursement"]) })
   .superRefine((val, ctx) => {
-    if (val.type === "income" && !val.toAccountId) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: "Income needs an account to credit." });
+    if ((val.type === "income" || val.type === "reimbursement") && !val.toAccountId) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["toAccountId"], message: `${val.type === "income" ? "Income" : "Reimbursement"} needs an account to credit.` });
     }
     if (val.type === "expense" && !val.fromAccountId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fromAccountId"], message: "Expense needs an account to debit." });
@@ -73,4 +79,18 @@ export const transactionUpdateSchema = transactionSchema;
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(6).max(200),
+});
+
+export const createSplitSchema = z.object({
+  totalAmount: z.number().positive().finite(), // major units
+  myShare: z.number().positive().finite(), // major units
+  fromAccountId: z.string().min(1),
+  categoryId: z.string().optional().nullable(),
+  note: z.string().max(200).optional(),
+  date: z.coerce.date().optional(),
+});
+
+export const repaySplitSchema = z.object({
+  amount: z.number().positive().finite(), // major units
+  toAccountId: z.string().min(1),
 });

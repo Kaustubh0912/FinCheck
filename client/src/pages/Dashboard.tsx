@@ -7,6 +7,7 @@ import { Icon } from "../lib/icons";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
 import { Sheet } from "../components/Sheet";
+import { BudgetWidget } from "../components/BudgetWidget";
 import type { Transaction } from "../lib/types";
 
 export function Dashboard() {
@@ -40,6 +41,9 @@ export function Dashboard() {
           <p className="hello">Hello, {user?.name?.split(" ")[0] ?? "there"}</p>
           <h1>Overview</h1>
         </div>
+        <Link to="/settings" className="icon-btn" aria-label="Settings">
+          <Icon name="settings" />
+        </Link>
       </header>
 
       <section className="networth-card">
@@ -80,6 +84,8 @@ export function Dashboard() {
               <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
             </div>
           </div>
+
+          <BudgetWidget expense={summary?.expense ?? 0} monthlyBudget={user?.monthlyBudget} />
 
           {cats.length > 0 && (
             <section className="card">

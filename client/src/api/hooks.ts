@@ -128,3 +128,43 @@ export function useSummary(range?: { from: string; to: string }) {
       (await api.get<Summary>("/summary", { params: range })).data,
   });
 }
+
+// ---- Splits ----
+export function useSplits(settled?: boolean) {
+  return useQuery({
+    queryKey: ["splits", settled],
+    queryFn: async () => {
+      const params = settled !== undefined ? { settled } : undefined;
+      const res = await api.get<import("../lib/types").Split[]>("/splits", { params });
+      return res.data;
+    },
+  });
+}
+
+export function useCreateSplit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { totalAmount: number; myShare: number; fromAccountId: string; categoryId?: string | null; note?: string; date?: string }) => {
+      const res = await api.post("/splits", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["splits"] });
+      invalidateMoney(qc);
+    },
+  });
+}
+
+export function useRepaySplit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, amount, toAccountId }: { id: string; amount: number; toAccountId: string }) => {
+      const res = await api.post(`/splits/${id}/repay`, { amount, toAccountId });
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["splits"] });
+      invalidateMoney(qc);
+    },
+  });
+}

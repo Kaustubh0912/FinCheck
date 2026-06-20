@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sheet } from "./Sheet";
 import { SmartDateInput } from "./SmartDateInput";
 import { Icon } from "../lib/icons";
-import { useAccounts, useCategories, useSaveTransaction, useDeleteTransaction } from "../api/hooks";
+import { useAccounts, useCategories, useSaveTransaction, useDeleteTransaction, useCreateSplit } from "../api/hooks";
 import { useAuth } from "../auth/AuthContext";
 import { currencySymbol } from "../lib/format";
 import { errMessage } from "../api/client";
@@ -14,10 +14,11 @@ interface Props {
   editing?: Transaction;
 }
 
-const TYPES: { key: TxnType; label: string }[] = [
+const TYPES: { key: TxnType | "split"; label: string }[] = [
   { key: "expense", label: "Expense" },
   { key: "income", label: "Income" },
   { key: "transfer", label: "Transfer" },
+  { key: "split", label: "Split" },
 ];
 
 function todayInput(d?: string) {
@@ -33,9 +34,11 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const { data: categories = [] } = useCategories();
   const saveTxn = useSaveTransaction();
   const deleteTxn = useDeleteTransaction();
+  const createSplit = useCreateSplit();
 
-  const [type, setType] = useState<TxnType>("expense");
+  const [type, setType] = useState<TxnType | "split">("expense");
   const [amount, setAmount] = useState("");
+  const [myShare, setMyShare] = useState("");
   const [fromAccountId, setFromAccountId] = useState<string>("");
   const [toAccountId, setToAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
@@ -55,6 +58,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     if (editing) {
       setType(editing.type);
       setAmount(String(editing.amount / 100));
+      setMyShare("");
       setFromAccountId(editing.fromAccountId ?? "");
       setToAccountId(editing.toAccountId ?? "");
       setCategoryId(editing.categoryId ?? "");
@@ -63,6 +67,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     } else {
       setType("expense");
       setAmount("");
+      setMyShare("");
       const first = liveAccounts[0]?.id ?? "";
       setFromAccountId(first);
       setToAccountId(liveAccounts[1]?.id ?? "");
@@ -93,6 +98,30 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     setError("");
     const value = Number(amount);
     if (!value || value <= 0) return setError("Enter an amount greater than zero.");
+    
+    if (type === "split") {
+      const shareValue = Number(myShare);
+      if (!shareValue || shareValue <= 0) return setError("Enter your share.");
+      if (shareValue > value) return setError("Your share cannot be greater than the total amount.");
+      if (!fromAccountId) return setError("Choose the account to take money from.");
+      
+      createSplit.mutate(
+        {
+          totalAmount: value,
+          myShare: shareValue,
+          fromAccountId,
+          categoryId: categoryId || null,
+          note: note.trim(),
+          date: new Date(date + "T12:00:00").toISOString(),
+        },
+        {
+          onSuccess: () => onClose(),
+          onError: (e: any) => setError(errMessage(e)),
+        }
+      );
+      return;
+    }
+
     if (type !== "income" && !fromAccountId) return setError("Choose the account to take money from.");
     if (type !== "expense" && !toAccountId) return setError("Choose the account to add money to.");
     if (type === "transfer" && fromAccountId === toAccountId) return setError("Pick two different accounts.");
@@ -134,8 +163,8 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
               <Icon name="trash" /> Delete
             </button>
           )}
-          <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending}>
-            {saveTxn.isPending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
+          <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending || createSplit.isPending}>
+            {saveTxn.isPending || createSplit.isPending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
           </button>
         </div>
       }
@@ -166,6 +195,20 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
         />
       </label>
+
+      {type === "split" && (
+        <label className="amount-field small" style={{ marginTop: -10 }}>
+          <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
+          <span className="amount-symbol">{symbol}</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            placeholder="0"
+            value={myShare}
+            onChange={(e) => setMyShare(e.target.value.replace(/[^0-9.]/g, ""))}
+          />
+        </label>
+      )}
 
       {liveAccounts.length === 0 ? (
         <p className="muted center">Add an account first (Accounts tab) so transactions have somewhere to go.</p>

@@ -14,24 +14,25 @@ export function TransactionItem({
   const isTransfer = txn.type === "transfer";
   const isSaving = txn.type === "saving";
   const isIncome = txn.type === "income";
+  const isReimbursement = txn.type === "reimbursement";
 
-  const iconName = isSaving ? "piggy" : isTransfer ? "transfer" : txn.category?.icon ?? (isIncome ? "sack" : "tag");
+  const iconName = isSaving ? "piggy" : (isTransfer || isReimbursement) ? "transfer" : txn.category?.icon ?? (isIncome ? "sack" : "tag");
   const title =
     txn.note ||
-    (isSaving ? "Saving" : isTransfer ? "Transfer" : txn.category?.name ?? (isIncome ? "Income" : "Expense"));
+    (isSaving ? "Saving" : isTransfer ? "Transfer" : isReimbursement ? "Reimbursement" : txn.category?.name ?? (isIncome ? "Income" : "Expense"));
 
   const subtitle = (isTransfer || isSaving) ? (
     <>
       {txn.fromAccount?.name ?? "?"} <Icon name="arrow-right" /> {txn.toAccount?.name ?? "?"}
     </>
-  ) : isIncome ? (
+  ) : (isIncome || isReimbursement) ? (
     `to ${txn.toAccount?.name ?? "?"}`
   ) : (
     `from ${txn.fromAccount?.name ?? "?"}`
   );
 
-  const sign = isIncome ? "+" : (isTransfer || isSaving) ? "" : "−";
-  const amountClass = isIncome ? "amt-income" : (isTransfer || isSaving) ? "amt-transfer" : "amt-expense";
+  const sign = isIncome ? "+" : (isTransfer || isSaving || isReimbursement) ? "" : "−";
+  const amountClass = isIncome ? "amt-income" : (isTransfer || isSaving || isReimbursement) ? "amt-transfer" : "amt-expense";
 
   return (
     <button className="txn" onClick={onClick}>

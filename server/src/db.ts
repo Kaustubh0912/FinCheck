@@ -24,6 +24,7 @@ const userSchema = new Schema(
     name: { type: String, required: true },
     passwordHash: { type: String, required: true },
     currency: { type: String, default: "INR" },
+    monthlyBudget: { type: Number, default: null }, // minor units
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "User" }
 );
@@ -95,3 +96,26 @@ transactionSchema.virtual("category", {
 });
 
 export const Transaction = mongoose.models.Transaction || mongoose.model("Transaction", transactionSchema);
+
+// Split Schema
+const splitSchema = new Schema(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    transactionId: { type: Schema.Types.ObjectId, ref: "Transaction", required: true },
+    totalAmount: { type: Number, required: true }, // minor units
+    myShare: { type: Number, required: true }, // minor units
+    splitNote: { type: String, default: "" },
+    settled: { type: Boolean, default: false },
+    settledAmount: { type: Number, default: 0 }, // minor units
+  },
+  { timestamps: true, toJSON, toObject: toJSON, collection: "Split" }
+);
+
+splitSchema.virtual("transaction", {
+  ref: "Transaction",
+  localField: "transactionId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+export const Split = mongoose.models.Split || mongoose.model("Split", splitSchema);
