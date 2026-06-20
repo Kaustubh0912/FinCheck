@@ -10,11 +10,30 @@ class WidgetPrefs(context: Context) {
     private val prefs: SharedPreferences
 
     init {
+        prefs = try {
+            createEncryptedPrefs(context)
+        } catch (e: Exception) {
+            // If the keystore was invalidated (e.g. app reinstall), delete the corrupted prefs
+            context.getSharedPreferences("fincheck_widget_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+            val file = java.io.File(context.applicationInfo.dataDir + "/shared_prefs/fincheck_widget_prefs.xml")
+            if (file.exists()) {
+                file.delete()
+            }
+            try {
+                createEncryptedPrefs(context)
+            } catch (e2: Exception) {
+                // Ultimate fallback
+                context.getSharedPreferences("fincheck_widget_prefs_fallback", Context.MODE_PRIVATE)
+            }
+        }
+    }
+
+    private fun createEncryptedPrefs(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
-        prefs = EncryptedSharedPreferences.create(
+        return EncryptedSharedPreferences.create(
             context,
             "fincheck_widget_prefs",
             masterKey,

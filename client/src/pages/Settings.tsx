@@ -203,7 +203,7 @@ export function Settings() {
         <div className="chip-grid">{income.map(catChip)}</div>
       </section>
 
-      {(!installed || isAndroid) && (
+      {!installed && (
         <section className="card">
           <h2 className="card-title">Install app</h2>
           {isAndroid ? (
