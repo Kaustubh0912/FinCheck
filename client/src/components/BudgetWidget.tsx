@@ -4,10 +4,11 @@ import { useAuth } from "../auth/AuthContext";
 
 interface BudgetWidgetProps {
   expense: number; // minor units
+  todayExpense: number; // minor units
   monthlyBudget: number | null | undefined; // minor units
 }
 
-export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
+export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWidgetProps) {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
   const [checkAmount, setCheckAmount] = useState("");
@@ -37,11 +38,13 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
   const daysLeft = totalDays - currentDay + 1; // including today
   const daysElapsed = currentDay;
   
-  const remaining = monthlyBudget - expense;
-  const dailyAllowance = Math.max(0, remaining / daysLeft);
+  // Stable daily budget calculation
+  const monthExpenseBeforeToday = Math.max(0, expense - todayExpense);
+  const todaysBudget = Math.max(0, (monthlyBudget - monthExpenseBeforeToday) / daysLeft);
+  const leftToday = todaysBudget - todayExpense;
   
-  const pctSpent = Math.min(100, (expense / monthlyBudget) * 100);
-  const isDanger = pctSpent > 80;
+  const pctSpentToday = todaysBudget > 0 ? Math.min(100, Math.max(0, (todayExpense / todaysBudget) * 100)) : 100;
+  const isDangerToday = leftToday < 0;
 
   // Burn rate calc
   const expectedSpend = (monthlyBudget / totalDays) * daysElapsed;
@@ -53,7 +56,7 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
     if (isNaN(amt) || amt <= 0) return;
     
     // compare in minor units
-    if (Math.round(amt * 100) <= dailyAllowance) {
+    if (Math.round(amt * 100) <= leftToday) {
       setCheckResult("YES");
     } else {
       setCheckResult("NO");
@@ -66,7 +69,7 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
 
       <div className="budget-hero">
         <div className="budget-allowance serif">
-          {formatMoney(dailyAllowance, currency)}
+          {formatMoney(todaysBudget, currency)}
           <span className="budget-per-day muted"> / day</span>
         </div>
         <span className="date-hint" style={{ marginTop: 2 }}>{daysLeft} days left in {now.toLocaleString('default', { month: 'long' })}</span>
@@ -76,13 +79,28 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
         <div 
           className="bd-fill" 
           style={{ 
-            width: `${pctSpent}%`, 
-            backgroundColor: isDanger ? "var(--expense)" : "var(--income)" 
+            width: `${pctSpentToday}%`, 
+            backgroundColor: isDangerToday ? "var(--expense)" : "var(--income)" 
           }} 
         />
       </div>
 
-      <div className="budget-meta">
+      <div className="budget-meta" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span>
+          <span style={{ fontWeight: 500 }}>{formatMoney(todayExpense, currency)}</span> spent today
+        </span>
+        {isDangerToday ? (
+          <span className="amt-expense">
+            {formatMoney(Math.abs(leftToday), currency)} over budget
+          </span>
+        ) : (
+          <span className="amt-income">
+            {formatMoney(leftToday, currency)} left
+          </span>
+        )}
+      </div>
+
+      <div className="budget-meta" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line-light)' }}>
         {isOverPace ? (
           <span className="amt-expense">
             At this rate you'll overspend by {formatMoney((expense / daysElapsed) * totalDays - monthlyBudget, currency)} this month
@@ -120,7 +138,7 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
               {checkResult}
             </div>
             <div className="muted" style={{ fontSize: "0.85rem", marginTop: 4 }}>
-              You have {formatMoney(dailyAllowance, currency)}/day left with {daysLeft} days to go
+              You have {formatMoney(Math.max(0, leftToday), currency)} left today
             </div>
           </div>
         )}

@@ -85,7 +85,11 @@ export function Dashboard() {
             </div>
           </div>
 
-          <BudgetWidget expense={summary?.expense ?? 0} monthlyBudget={user?.monthlyBudget} />
+          <BudgetWidget 
+            expense={summary?.expense ?? 0} 
+            todayExpense={summary?.todayExpense ?? 0}
+            monthlyBudget={user?.monthlyBudget} 
+          />
 
           {cats.length > 0 && (
             <section className="card">

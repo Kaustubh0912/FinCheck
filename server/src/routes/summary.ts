@@ -17,8 +17,10 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   const to = req.query.to ? new Date(String(req.query.to)) : now;
 
   const dateRange = { $gte: from, $lte: to };
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
 
-  const [accounts, incomeAgg, expenseAgg, byCategoryRaw, categories] = await Promise.all([
+  const [accounts, incomeAgg, expenseAgg, todayExpenseAgg, byCategoryRaw, categories] = await Promise.all([
     accountsWithBalances(userId),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: "income", date: dateRange } },
@@ -26,6 +28,10 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     ]),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: "expense", date: dateRange } },
+      { $group: { _id: null, amount: { $sum: "$amount" } } },
+    ]),
+    Transaction.aggregate([
+      { $match: { userId: userObjectId, type: "expense", date: { $gte: todayStart, $lt: todayEnd } } },
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([
@@ -57,6 +63,7 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     netWorth,
     income: incomeAgg[0]?.amount ?? 0,
     expense: expenseAgg[0]?.amount ?? 0,
+    todayExpense: todayExpenseAgg[0]?.amount ?? 0,
     byCategory,
     accounts,
   });

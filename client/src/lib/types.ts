@@ -75,6 +75,7 @@ export interface Summary {
   netWorth: number;
   income: number;
   expense: number;
+  todayExpense: number;
   byCategory: { categoryId: string | null; name: string; icon: string; color: string; amount: number }[];
   accounts: Account[];
 }
