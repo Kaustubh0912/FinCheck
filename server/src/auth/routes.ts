@@ -69,7 +69,7 @@ authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   const user = await User.findByIdAndUpdate(
     req.userId,
     updateData,
-    { new: true }
+    { returnDocument: "after" }
   );
   res.json({ user: publicUser(user as any) });
 });

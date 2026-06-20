@@ -32,7 +32,7 @@ categoriesRouter.patch("/:id", async (req: AuthedRequest, res) => {
     res.status(404).json({ error: "Category not found" });
     return;
   }
-  const category = await Category.findByIdAndUpdate(req.params.id, parsed.data, { new: true });
+  const category = await Category.findByIdAndUpdate(req.params.id, parsed.data, { returnDocument: "after" });
   res.json(category);
 });
 

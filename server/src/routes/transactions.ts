@@ -114,7 +114,7 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res) => {
       toAccountId,
       categoryId,
     },
-    { new: true }
+    { returnDocument: "after" }
   )
     .populate("fromAccount", "id name icon color")
     .populate("toAccount", "id name icon color")
