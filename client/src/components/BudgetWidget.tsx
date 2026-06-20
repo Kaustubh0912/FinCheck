@@ -62,15 +62,14 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
 
   return (
     <section className="card budget-widget">
-      <div className="card-head">
-        <h2 className="card-title">Allowance</h2>
-        <span className="muted date-hint">{daysLeft} days left</span>
-      </div>
+      <h2 className="card-title">Allowance</h2>
 
       <div className="budget-hero">
         <div className="budget-allowance serif">
-          {formatMoney(dailyAllowance, currency)} <span className="budget-per-day muted">/ day</span>
+          {formatMoney(dailyAllowance, currency)}
+          <span className="budget-per-day muted"> / day</span>
         </div>
+        <span className="date-hint" style={{ marginTop: 2 }}>{daysLeft} days left in {now.toLocaleString('default', { month: 'long' })}</span>
       </div>
 
       <div className="bd-track">
@@ -97,20 +96,22 @@ export function BudgetWidget({ expense, monthlyBudget }: BudgetWidgetProps) {
 
       <div className="budget-check">
         {!checkResult ? (
-          <div className="budget-check-input">
-            <span className="muted">How much is it?</span>
-            <div className="row gap" style={{ marginTop: 6 }}>
-              <input 
-                type="number" 
-                className="input sm" 
-                placeholder="₹" 
-                value={checkAmount} 
+          <div className="field">
+            <label className="field-label">Can I afford this?</label>
+            <div className="amount-field small" style={{ marginTop: 0 }}>
+              <span className="amount-symbol">₹</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="0"
+                value={checkAmount}
                 onChange={(e) => setCheckAmount(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCheck();
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleCheck(); }}
+                style={{ fontSize: "1.25rem" }}
               />
-              <button className="btn btn-pill" onClick={handleCheck}>Check</button>
+              <button className="btn btn-pill sm" onClick={handleCheck} style={{ marginLeft: 8, flexShrink: 0 }}>
+                Check
+              </button>
             </div>
           </div>
         ) : (

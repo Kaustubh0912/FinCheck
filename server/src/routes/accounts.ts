@@ -28,6 +28,22 @@ accountsRouter.post("/", async (req: AuthedRequest, res) => {
   res.status(201).json({ ...account.toJSON(), balance: account.openingBalance });
 });
 
+accountsRouter.patch("/reorder", async (req: AuthedRequest, res) => {
+  const { updates } = req.body;
+  if (!Array.isArray(updates)) {
+    res.status(400).json({ error: "Invalid input" });
+    return;
+  }
+  
+  await Promise.all(
+    updates.map((u: { id: string, order: number }) => 
+      Account.findOneAndUpdate({ _id: u.id, userId: req.userId }, { order: u.order })
+    )
+  );
+  
+  res.status(200).json({ success: true });
+});
+
 accountsRouter.patch("/:id", async (req: AuthedRequest, res) => {
   const parsed = accountUpdateSchema.safeParse(req.body);
   if (!parsed.success) {

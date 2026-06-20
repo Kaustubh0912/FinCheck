@@ -33,6 +33,7 @@ export interface Account {
   archived: boolean;
   createdAt: string;
   balance: number; // minor units, computed by the server
+  order: number;
 }
 
 export interface Category {

@@ -144,25 +144,29 @@ export function Settings() {
         </div>
         <div className="field">
           <label className="field-label">Monthly budget</label>
-          <input 
-            className="input" 
-            type="number" 
-            placeholder="Optional" 
-            value={budgetInput} 
-            onChange={(e) => setBudgetInput(e.target.value)} 
-          />
+          <div className="amount-field small">
+            <span className="amount-symbol">₹</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="0"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+              style={{ fontSize: "1.25rem" }}
+            />
+          </div>
+          <p className="date-hint">Your total spending limit for the month.</p>
         </div>
         <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile}>
           {savingProfile ? "Saving…" : "Save profile"}
         </button>
         {profileMsg && <span className="muted save-msg">{profileMsg}</span>}
-      </section>
-
-      <section className="card">
-        <h2 className="card-title">Change Password</h2>
-        <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
-          <Icon name="lock" /> Change Password
-        </button>
+        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
+          <p className="field-label" style={{ marginBottom: 10 }}>Password</p>
+          <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
+            <Icon name="lock" /> Change password
+          </button>
+        </div>
       </section>
 
       <section className="card">

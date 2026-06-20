@@ -45,6 +45,20 @@ export function useDeleteAccount() {
   });
 }
 
+export function useReorderAccounts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: { id: string; order: number }[]) =>
+      await api.patch("/accounts/reorder", { updates }),
+    onMutate: async (updates) => {
+      await qc.cancelQueries({ queryKey: ["accounts"] });
+      const previousAccounts = qc.getQueryData<Account[]>(["accounts"]);
+      return { previousAccounts };
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+  });
+}
+
 // ---- Categories ----
 export function useCategories() {
   return useQuery({

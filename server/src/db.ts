@@ -41,6 +41,7 @@ const accountSchema = new Schema(
     icon: { type: String, default: "bank" },
     archived: { type: Boolean, default: false },
     goalTarget: { type: Number, default: null }, // minor units
+    order: { type: Number, default: 0 },
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Account" }
 );

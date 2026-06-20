@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
-import { useAccounts } from "../api/hooks";
+import { useAccounts, useReorderAccounts } from "../api/hooks";
 import { AccountSheet } from "../components/AccountSheet";
 import { GoalActionSheet } from "../components/GoalActionSheet";
 import { formatMoney } from "../lib/format";
@@ -10,18 +10,58 @@ import type { Account } from "../lib/types";
 export function Accounts() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts } = useAccounts();
+  const reorderAccounts = useReorderAccounts();
+  const [orderedAccounts, setOrderedAccounts] = useState<Account[]>([]);
+  
+  useEffect(() => {
+    if (accounts) {
+      setOrderedAccounts(accounts);
+    }
+  }, [accounts]);
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Account | undefined>();
   const [view, setView] = useState<"balances" | "goals">("balances");
   const [goalAction, setGoalAction] = useState<{ goal: Account; mode: "add" | "withdraw" } | null>(null);
 
-  const live = accounts.filter((a) => !a.archived && a.type !== "savings");
-  const savings = accounts.filter((a) => !a.archived && a.type === "savings");
-  const archived = accounts.filter((a) => a.archived);
-  const total = accounts.filter(a => !a.archived).reduce((sum, a) => sum + a.balance, 0);
+  const live = orderedAccounts.filter((a) => !a.archived && a.type !== "savings");
+  const savings = orderedAccounts.filter((a) => !a.archived && a.type === "savings");
+  const archived = orderedAccounts.filter((a) => a.archived);
+  const total = orderedAccounts.filter(a => !a.archived).reduce((sum, a) => sum + a.balance, 0);
 
   const goals = savings.filter((a) => (a.goalTarget ?? 0) > 0);
+
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (id !== dragOverId) setDragOverId(id);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedId && dragOverId && draggedId !== dragOverId) {
+      const newAccs = [...orderedAccounts];
+      const fromIdx = newAccs.findIndex(a => a.id === draggedId);
+      const toIdx = newAccs.findIndex(a => a.id === dragOverId);
+      
+      if (fromIdx >= 0 && toIdx >= 0) {
+        const [moved] = newAccs.splice(fromIdx, 1);
+        newAccs.splice(toIdx, 0, moved);
+        setOrderedAccounts(newAccs);
+        
+        reorderAccounts.mutate(newAccs.map((a, i) => ({ id: a.id, order: i })));
+      }
+    }
+    setDraggedId(null);
+    setDragOverId(null);
+  };
 
   const openNew = () => {
     setEditing(undefined);
@@ -32,34 +72,83 @@ export function Accounts() {
     setSheetOpen(true);
   };
 
-  const card = (a: Account) => (
-    <button key={a.id} className="account-card" onClick={() => openEdit(a)}>
-      <span className="account-icon" style={{ background: a.color + "22", color: a.color }}>
-        <Icon name={a.icon} />
-      </span>
-      <span className="account-info">
-        <span className="account-name">{a.name}</span>
-        <span className="account-type">{a.type}</span>
-      </span>
-      <span className={`account-balance ${a.balance < 0 ? "amt-expense" : ""}`}>
-        {formatMoney(a.balance, currency)}
-      </span>
-    </button>
-  );
+  const card = (a: Account) => {
+    const isDragged = a.id === draggedId;
+    const isOver = a.id === dragOverId;
+    const fromIdx = orderedAccounts.findIndex(acc => acc.id === draggedId);
+    const toIdx = orderedAccounts.findIndex(acc => acc.id === a.id);
+    
+    return (
+      <div 
+        key={a.id} 
+        draggable
+        onDragStart={(e) => handleDragStart(e, a.id)}
+        onDragOver={(e) => handleDragOver(e, a.id)}
+        onDragEnd={handleDragEnd}
+        style={{
+           opacity: isDragged ? 0.5 : 1,
+           borderTop: isOver && toIdx < fromIdx ? "2px solid var(--accent)" : "none",
+           borderBottom: isOver && toIdx > fromIdx ? "2px solid var(--accent)" : "none",
+           position: "relative",
+           display: "flex",
+           alignItems: "center",
+           cursor: "grab"
+        }}
+      >
+        <button className="account-card" onClick={() => openEdit(a)} style={{ flex: 1, borderBottom: "none", paddingRight: 0 }}>
+          <span className="account-icon" style={{ background: a.color + "22", color: a.color }}>
+            <Icon name={a.icon} />
+          </span>
+          <span className="account-info">
+            <span className="account-name">{a.name}</span>
+            <span className="account-type">{a.type}</span>
+          </span>
+          <span className={`account-balance ${a.balance < 0 ? "amt-expense" : ""}`}>
+            {formatMoney(a.balance, currency)}
+          </span>
+        </button>
+        <div style={{ padding: "16px 8px 16px 12px", color: "var(--faint)" }}>
+          <Icon name="grip-vertical" />
+        </div>
+      </div>
+    );
+  };
 
   const goalCard = (a: Account) => {
     const target = a.goalTarget || 1;
     const progress = Math.min(100, Math.max(0, (a.balance / target) * 100));
+    const isDragged = a.id === draggedId;
+    const isOver = a.id === dragOverId;
+    const fromIdx = orderedAccounts.findIndex(acc => acc.id === draggedId);
+    const toIdx = orderedAccounts.findIndex(acc => acc.id === a.id);
+    
     return (
-      <div key={a.id} className="goal-card">
-        <button className="goal-info" onClick={() => openEdit(a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+      <div 
+        key={a.id} 
+        className="goal-card"
+        draggable
+        onDragStart={(e) => handleDragStart(e, a.id)}
+        onDragOver={(e) => handleDragOver(e, a.id)}
+        onDragEnd={handleDragEnd}
+        style={{
+           opacity: isDragged ? 0.5 : 1,
+           borderTop: isOver && toIdx < fromIdx ? "2px solid var(--accent)" : "none",
+           borderBottom: isOver && toIdx > fromIdx ? "2px solid var(--accent)" : "none",
+           position: "relative",
+           cursor: "grab"
+        }}
+      >
+        <button className="goal-info" onClick={() => openEdit(a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'grab', textAlign: 'left', width: '100%' }}>
           <div className="goal-name-wrap">
             <span className="account-icon" style={{ background: a.color + "22", color: a.color, width: 32, height: 32, borderRadius: 8 }}>
               <Icon name={a.icon} />
             </span>
             <span className="goal-name">{a.name}</span>
           </div>
-          <span className="goal-pct">{Math.round(progress)}%</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="goal-pct">{Math.round(progress)}%</span>
+            <span style={{ color: "var(--faint)" }}><Icon name="grip-vertical" /></span>
+          </div>
         </button>
         <div className="goal-track">
           <div className="goal-fill" style={{ width: `${progress}%`, background: a.color }} />

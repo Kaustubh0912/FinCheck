@@ -18,7 +18,7 @@ export async function accountsWithBalances(userId: string): Promise<AccountWithB
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const [accounts, inflow, outflow] = await Promise.all([
-    Account.find({ userId }).sort({ createdAt: 1 }),
+    Account.find({ userId }).sort({ order: 1, createdAt: 1 }),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] }, toAccountId: { $ne: null } } },
       { $group: { _id: "$toAccountId", amount: { $sum: "$amount" } } },
