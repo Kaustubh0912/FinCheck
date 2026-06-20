@@ -10,6 +10,11 @@ splitsRouter.get("/", async (req: AuthedRequest, res) => {
   const query: any = { userId: req.userId };
   if (req.query.settled === "true") query.settled = true;
   if (req.query.settled === "false") query.settled = false;
+  if (req.query.from || req.query.to) {
+    query.createdAt = {};
+    if (req.query.from) query.createdAt.$gte = new Date(String(req.query.from));
+    if (req.query.to) query.createdAt.$lte = new Date(String(req.query.to));
+  }
 
   const splits = await Split.find(query)
     .populate("transaction")

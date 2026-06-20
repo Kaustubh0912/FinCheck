@@ -49,7 +49,7 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
       return {
         categoryId: catIdStr,
         name: cat?.name ?? "Uncategorized",
-        icon: cat?.icon ?? "🔖",
+        icon: cat?.icon ?? "tag",
         color: cat?.color ?? "#94a3b8",
         amount: row.amount ?? 0,
       };

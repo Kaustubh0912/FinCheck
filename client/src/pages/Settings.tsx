@@ -91,15 +91,17 @@ export function Settings() {
     setReporting(true);
     try {
       const params = { from: range.from.toISOString(), to: range.to.toISOString() };
-      const [sum, txns] = await Promise.all([
+      const [sum, txns, splitsRes] = await Promise.all([
         api.get("/summary", { params }),
         api.get("/transactions", { params: { ...params, limit: 500 } }),
+        api.get("/splits", { params }),
       ]);
       const { generateReport } = await import("../lib/report");
       generateReport({
-        user: { name: user?.name ?? "", currency: user?.currency ?? "INR" },
+        user: { name: user?.name ?? "", currency: user?.currency ?? "INR", monthlyBudget: user?.monthlyBudget },
         summary: sum.data,
         transactions: txns.data,
+        splits: splitsRes.data,
         periodLabel: rangeLabel(range.from, range.to),
       });
     } catch (e) {
