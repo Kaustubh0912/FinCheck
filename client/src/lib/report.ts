@@ -293,32 +293,6 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     y += 14;
   }
 
-  // ---- Top 5 Expenses ----
-  const expenses = transactions.filter(t => t.type === "expense").sort((a, b) => b.amount - a.amount).slice(0, 5);
-  if (expenses.length > 0) {
-    checkPageBreak(120);
-    sectionTitle("Top 5 Expenses");
-    autoTable(doc, {
-      startY: y,
-      margin: { left: M, right: M },
-      theme: "plain",
-      head: [["Date", "Description", "Category", "Amount"]],
-      body: expenses.map((t) => [
-        fmtDate(t.date),
-        truncate(t.note || "-", 35),
-        t.category?.name ?? "-",
-        money(t.amount, cur),
-      ]),
-      headStyles,
-      bodyStyles: { ...baseBody, fontSize: 9 },
-      columnStyles: {
-        0: { cellWidth: 64, textColor: MUTED },
-        3: { halign: "right", font: "times", fontStyle: "bold", textColor: EXP },
-      },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 36;
-  }
-
   // ---- Splits Appendix ----
   if (splits.length > 0) {
     checkPageBreak(120);
