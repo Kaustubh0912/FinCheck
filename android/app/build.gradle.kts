@@ -97,6 +97,7 @@ dependencies {
 
   // Custom added for FinCheck TWA and Widget
   implementation(libs.androidx.browser)
+  implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.5.0")
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.moshi)
   implementation(libs.moshi.kotlin)

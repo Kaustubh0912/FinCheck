@@ -11,12 +11,14 @@ import com.example.fincheck.widget.WidgetRefreshWorker
 
 class MainActivity : ComponentActivity() {
     private var launched = false
+    private lateinit var launcher: com.google.androidbrowserhelper.trusted.TwaLauncher
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState != null) {
             launched = savedInstanceState.getBoolean("launched", false)
         }
+        launcher = com.google.androidbrowserhelper.trusted.TwaLauncher(this)
     }
 
     override fun onResume() {
@@ -24,24 +26,17 @@ class MainActivity : ComponentActivity() {
         if (!launched) {
             launched = true
             val uri = Uri.parse("https://fin-check-client.vercel.app/")
-            val customTabsIntent = CustomTabsIntent.Builder()
-                .setShowTitle(false)
-                .build()
-            
-            // Setting the package to Chrome to ensure it acts as a TWA/Custom Tab properly if possible
-            customTabsIntent.intent.setPackage("com.android.chrome")
-            try {
-                customTabsIntent.launchUrl(this, uri)
-            } catch (e: Exception) {
-                // Fallback if Chrome is not installed
-                customTabsIntent.intent.setPackage(null)
-                customTabsIntent.launchUrl(this, uri)
-            }
+            launcher.launch(uri)
         } else {
             // Returned from TWA
             refreshWidgets()
             finish()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        launcher.destroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

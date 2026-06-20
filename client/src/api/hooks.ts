@@ -136,10 +136,17 @@ export function useDeleteTransaction() {
 
 // ---- Summary ----
 export function useSummary(range?: { from: string; to: string }) {
+  const params: any = { ...range };
+  
+  // Pass the client's local midnight to the server for accurate todayExpense calculation
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  params.todayStart = todayStart.toISOString();
+
   return useQuery({
     queryKey: ["summary", range],
     queryFn: async () =>
-      (await api.get<Summary>("/summary", { params: range })).data,
+      (await api.get<Summary>("/summary", { params })).data,
   });
 }
 

@@ -17,7 +17,10 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   const to = req.query.to ? new Date(String(req.query.to)) : now;
 
   const dateRange = { $gte: from, $lte: to };
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (req.query.todayStart) {
+    todayStart = new Date(String(req.query.todayStart));
+  }
   const todayEnd = new Date(todayStart.getTime() + 86400000);
 
   const [accounts, incomeAgg, expenseAgg, todayExpenseAgg, byCategoryRaw, categories] = await Promise.all([
