@@ -17,7 +17,8 @@ interface FinCheckApi {
     @GET("api/summary")
     suspend fun getSummary(
         @Query("from") from: String,
-        @Query("to") to: String
+        @Query("to") to: String,
+        @Query("todayStart") todayStart: String? = null
     ): SummaryResponse
 
     @GET("api/auth/me")

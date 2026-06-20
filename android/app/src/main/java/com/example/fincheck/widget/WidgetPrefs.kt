@@ -28,7 +28,7 @@ class WidgetPrefs(context: Context) {
         set(value) = prefs.edit().putString("jwt_token", value).apply()
 
     var serverUrl: String
-        get() = prefs.getString("server_url", "https://fincheck-djfa.onrender.com") ?: "https://fincheck-djfa.onrender.com"
+        get() = prefs.getString("server_url", "") ?: ""
         set(value) = prefs.edit().putString("server_url", value).apply()
 
     var currency: String

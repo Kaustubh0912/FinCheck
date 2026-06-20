@@ -65,9 +65,7 @@ class FinCheckWidget : AppWidgetProvider() {
             if (prefs.jwtToken == null) {
                 views.setTextViewText(R.id.widget_net_worth, "Tap to setup")
                 views.setTextViewText(R.id.widget_today_expense, "--")
-                views.setTextViewText(R.id.widget_month_net, "--")
-                views.setTextViewText(R.id.widget_income, "--")
-                views.setTextViewText(R.id.widget_expense, "--")
+                views.setTextViewText(R.id.widget_daily_limit, "--")
                 views.setTextViewText(R.id.widget_last_updated, "Needs login")
                 
                 // Intent to setup/login
@@ -95,15 +93,24 @@ class FinCheckWidget : AppWidgetProvider() {
                             
                             val netWorthStr = format.format(data.netWorth / 100.0)
                             val todayStr = format.format(data.todayExpense / 100.0)
-                            val incomeStr = format.format(data.monthlyIncome / 100.0)
-                            val expenseStr = format.format(data.monthlyExpense / 100.0)
-                            val monthNetStr = format.format((data.monthlyIncome - data.monthlyExpense) / 100.0)
 
                             views.setTextViewText(R.id.widget_net_worth, netWorthStr)
                             views.setTextViewText(R.id.widget_today_expense, todayStr)
-                            views.setTextViewText(R.id.widget_month_net, monthNetStr)
-                            views.setTextViewText(R.id.widget_income, "↑ $incomeStr")
-                            views.setTextViewText(R.id.widget_expense, "↓ $expenseStr")
+
+                            if (data.monthlyBudget != null && data.monthlyBudget > 0) {
+                                val cal = java.util.Calendar.getInstance()
+                                val totalDays = cal.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+                                val currentDay = cal.get(java.util.Calendar.DAY_OF_MONTH)
+                                val daysLeft = totalDays - currentDay + 1
+                                
+                                val monthExpenseBeforeToday = Math.max(0L, data.monthlyExpense - data.todayExpense)
+                                val todaysBudget = Math.max(0L, (data.monthlyBudget - monthExpenseBeforeToday) / daysLeft)
+                                
+                                val limitStr = format.format(todaysBudget / 100.0)
+                                views.setTextViewText(R.id.widget_daily_limit, limitStr)
+                            } else {
+                                views.setTextViewText(R.id.widget_daily_limit, "--")
+                            }
 
                             val timeString = DateUtils.formatDateTime(
                                 context,

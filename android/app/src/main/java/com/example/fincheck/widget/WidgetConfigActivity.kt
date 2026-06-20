@@ -62,7 +62,7 @@ class WidgetConfigActivity : ComponentActivity() {
     @Composable
     fun ConfigScreen(onComplete: () -> Unit) {
         val prefs = remember { WidgetPrefs(this@WidgetConfigActivity) }
-        var serverUrl by remember { mutableStateOf(prefs.serverUrl) }
+        var serverUrl by remember { mutableStateOf(prefs.serverUrl.ifEmpty { "" }) }
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var isLoading by remember { mutableStateOf(false) }
@@ -85,6 +85,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 value = serverUrl,
                 onValueChange = { serverUrl = it },
                 label = { Text("Server URL") },
+                placeholder = { Text("https://your-app.onrender.com") },
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 singleLine = true
             )

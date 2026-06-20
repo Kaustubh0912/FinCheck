@@ -40,11 +40,18 @@ class WidgetRefreshWorker(
             cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
             val monthEndStr = sdf.format(cal.time)
 
+            val todayMidnight = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.format(Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.time)
+
             // Fetch monthly summary for netWorth, income, expense
-            val monthlySummary = api.getSummary(monthStartStr, monthEndStr)
-            
-            // Note: Since monthlySummary also includes todayExpense according to the API response, 
-            // we don't necessarily need a separate request for today's spending, but to be sure we can just use the returned todayExpense.
+            val monthlySummary = api.getSummary(monthStartStr, monthEndStr, todayMidnight)
+            val me = api.getMe()
             
             val widgetData = WidgetData(
                 netWorth = monthlySummary.netWorth,
@@ -52,7 +59,8 @@ class WidgetRefreshWorker(
                 monthlyExpense = monthlySummary.expense,
                 todayExpense = monthlySummary.todayExpense,
                 currency = prefs.currency,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                monthlyBudget = me.user.monthlyBudget
             )
 
             val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()

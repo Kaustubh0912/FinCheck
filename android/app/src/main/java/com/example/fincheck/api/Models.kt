@@ -69,5 +69,6 @@ data class WidgetData(
     val monthlyExpense: Long,
     val todayExpense: Long,
     val currency: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val monthlyBudget: Long? = null
 )
