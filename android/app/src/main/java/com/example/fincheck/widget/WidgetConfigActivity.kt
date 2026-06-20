@@ -62,7 +62,6 @@ class WidgetConfigActivity : ComponentActivity() {
     @Composable
     fun ConfigScreen(onComplete: () -> Unit) {
         val prefs = remember { WidgetPrefs(this@WidgetConfigActivity) }
-        var serverUrl by remember { mutableStateOf(prefs.serverUrl.ifEmpty { "" }) }
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
         var isLoading by remember { mutableStateOf(false) }
@@ -79,15 +78,6 @@ class WidgetConfigActivity : ComponentActivity() {
                 text = "FinCheck Widget",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            OutlinedTextField(
-                value = serverUrl,
-                onValueChange = { serverUrl = it },
-                label = { Text("Server URL") },
-                placeholder = { Text("https://your-app.onrender.com") },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                singleLine = true
             )
 
             OutlinedTextField(
@@ -116,7 +106,7 @@ class WidgetConfigActivity : ComponentActivity() {
 
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank() || serverUrl.isBlank()) {
+                    if (email.isBlank() || password.isBlank()) {
                         errorMessage = "Please fill in all fields"
                         return@Button
                     }
@@ -124,8 +114,6 @@ class WidgetConfigActivity : ComponentActivity() {
                         isLoading = true
                         errorMessage = null
                         try {
-                            // Temporary update URL to try login
-                            prefs.serverUrl = serverUrl
                             val api = FinCheckApi.create(prefs)
                             
                             val loginResponse = api.login(LoginRequest(email, password))
