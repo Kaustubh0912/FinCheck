@@ -40,12 +40,18 @@ export function useInstallPrompt() {
     /iphone|ipad|ipod/i.test(window.navigator.userAgent) &&
     !(window as unknown as { MSStream?: unknown }).MSStream;
 
+  const isAndroid = /android/i.test(window.navigator.userAgent);
+
   async function install() {
+    if (isAndroid) {
+      window.location.href = "https://github.com/Kaustubh0912/FinCheck/releases/latest/download/app-release.apk";
+      return;
+    }
     if (!deferred) return;
     await deferred.prompt();
     await deferred.userChoice;
     setDeferred(null);
   }
 
-  return { canInstall: !!deferred, install, installed, isIOS };
+  return { canInstall: !!deferred || isAndroid, install, installed, isIOS, isAndroid };
 }

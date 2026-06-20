@@ -15,7 +15,7 @@ export function Settings() {
   const { user, logout, setUser } = useAuth();
   const { data: categories = [] } = useCategories();
   const [theme, setTheme] = useTheme();
-  const { canInstall, install, installed, isIOS } = useInstallPrompt();
+  const { canInstall, install, installed, isIOS, isAndroid } = useInstallPrompt();
 
   const [name, setName] = useState(user?.name ?? "");
   const [budgetInput, setBudgetInput] = useState(user?.monthlyBudget ? (user.monthlyBudget / 100).toString() : "");
@@ -203,10 +203,14 @@ export function Settings() {
         <div className="chip-grid">{income.map(catChip)}</div>
       </section>
 
-      {!installed && (
+      {(!installed || isAndroid) && (
         <section className="card">
           <h2 className="card-title">Install app</h2>
-          {canInstall ? (
+          {isAndroid ? (
+            <button className="btn btn-primary" onClick={install}>
+              <Icon name="download" /> Download Android App
+            </button>
+          ) : canInstall ? (
             <button className="btn btn-primary" onClick={install}>
               <Icon name="download" /> Install FinCheck
             </button>
