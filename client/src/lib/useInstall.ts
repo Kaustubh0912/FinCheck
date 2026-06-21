@@ -21,8 +21,17 @@ export function useInstallPrompt() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestDownloadUrl, setLatestDownloadUrl] = useState<string | null>(null);
 
-  // Current hardcoded version (bump this when releasing a new APK)
-  const CURRENT_APP_VERSION = "build-1";
+  // Fallback hardcoded version. Ideally the Android app passes ?apk_version=13 in the URL.
+  const CURRENT_APP_VERSION = "build-13";
+
+  // Capture dynamic version from Android app if passed in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const apkVersion = params.get("apk_version");
+    if (apkVersion) {
+      localStorage.setItem("fincheck_apk_version", apkVersion);
+    }
+  }, []);
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -55,7 +64,9 @@ export function useInstallPrompt() {
       .then(r => r.json())
       .then(data => {
         if (data.tag_name) {
-          const currentBuild = parseInt(CURRENT_APP_VERSION.replace(/[^0-9]/g, ""), 10) || 0;
+          const storedVersion = localStorage.getItem("fincheck_apk_version");
+          const versionToCompare = storedVersion ? `build-${storedVersion}` : CURRENT_APP_VERSION;
+          const currentBuild = parseInt(versionToCompare.replace(/[^0-9]/g, ""), 10) || 0;
           const latestBuild = parseInt(data.tag_name.replace(/[^0-9]/g, ""), 10) || 0;
           
           if (latestBuild > currentBuild) {

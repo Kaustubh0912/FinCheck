@@ -33,7 +33,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }}
 
     - name: Publish to GitHub Releases
       uses: softprops/action-gh-release@v2

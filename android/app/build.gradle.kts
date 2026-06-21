@@ -11,7 +11,7 @@ android {
         applicationId = "com.example.fincheck"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = (project.findProperty("versionCode") as? String)?.toInt() ?: 1
         versionName = "1.0"
     }
 

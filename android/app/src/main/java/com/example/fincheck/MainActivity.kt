@@ -25,7 +25,15 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (!launched) {
             launched = true
-            val uri = Uri.parse("https://fin-check-client.vercel.app/")
+            val pm = packageManager
+            val pInfo = pm.getPackageInfo(packageName, 0)
+            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                pInfo.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode
+            }
+            val uri = Uri.parse("https://fin-check-client.vercel.app/?apk_version=$versionCode")
             launcher.launch(uri)
         } else {
             // Returned from TWA
