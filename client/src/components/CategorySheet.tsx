@@ -4,6 +4,7 @@ import { IconPicker } from "./IconPicker";
 import { Icon } from "../lib/icons";
 import { useSaveCategory, useDeleteCategory } from "../api/hooks";
 import { errMessage } from "../api/client";
+import { resolveThemeColor } from "../lib/colors";
 import type { Category, CategoryKind } from "../lib/types";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#eab308", "#16a34a", "#0ea5e9", "#14b8a6", "#64748b"];
@@ -59,7 +60,15 @@ export function CategorySheet({
       footer={
         <div className="row gap">
           {editing && (
-            <button className="btn btn-ghost-danger" onClick={() => del.mutate(editing.id, { onSuccess: onClose })}>
+            <button
+              className="btn btn-ghost-danger"
+              onClick={() => {
+                if (window.confirm("Are you sure you want to delete this category?")) {
+                  del.mutate(editing.id, { onSuccess: onClose, onError: (e) => setError(errMessage(e)) });
+                }
+              }}
+              disabled={del.isPending}
+            >
               <Icon name="trash" /> Delete
             </button>
           )}
@@ -95,7 +104,7 @@ export function CategorySheet({
             <button
               key={c}
               className={`swatch ${color === c ? "swatch-active" : ""}`}
-              style={{ background: c }}
+              style={{ background: resolveThemeColor(c) }}
               onClick={() => setColor(c)}
               aria-label={`Colour ${c}`}
             />

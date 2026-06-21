@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Icon } from "../lib/icons";
 import { errMessage } from "../api/client";
@@ -30,14 +30,24 @@ export function PasswordSheet({
   passwordMsg,
   changePassword,
 }: PasswordSheetProps) {
+  const [localErr, setLocalErr] = useState("");
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setLocalErr("");
+      return;
+    }
     // Focus on current password field when opening
     const input = document.getElementById("current-password");
     input?.focus();
   }, [open]);
 
   function submit() {
+    setLocalErr("");
+    if (newPassword.length < 6) {
+      setLocalErr("New password must be at least 6 characters");
+      return;
+    }
     changePassword();
   }
 
@@ -92,7 +102,11 @@ export function PasswordSheet({
         />
       </div>
 
-      {passwordMsg && <p className="form-error">{passwordMsg}</p>}
+      {(localErr || passwordMsg) && (
+        <p className={(localErr || passwordMsg) === "Password changed successfully" ? "form-success" : "form-error"}>
+          {localErr || passwordMsg}
+        </p>
+      )}
     </Sheet>
   );
 }

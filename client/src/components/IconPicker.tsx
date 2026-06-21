@@ -1,4 +1,5 @@
 import { Icon, ICON_CHOICES } from "../lib/icons";
+import { resolveThemeColor } from "../lib/colors";
 
 /** A scrollable grid of Font Awesome icons to pick from. */
 export function IconPicker({
@@ -17,7 +18,7 @@ export function IconPicker({
           key={slug}
           type="button"
           className={`icon-pick ${value === slug ? "icon-pick-active" : ""}`}
-          style={value === slug ? { borderColor: color, color } : undefined}
+          style={value === slug ? { borderColor: resolveThemeColor(color), color: resolveThemeColor(color) } : undefined}
           onClick={() => onChange(slug)}
           aria-label={slug}
         >

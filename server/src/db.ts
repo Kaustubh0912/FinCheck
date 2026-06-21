@@ -35,16 +35,17 @@ const accountSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
-    type: { type: String, default: "bank" },
-    openingBalance: { type: Number, default: 0 }, // minor units
+    type: { type: String, enum: ["bank", "cash", "card", "wallet", "investment", "savings", "other"], default: "bank" },
+    openingBalance: { type: Number, min: 0, default: 0 }, // minor units
     color: { type: String, default: "#6366f1" },
     icon: { type: String, default: "bank" },
     archived: { type: Boolean, default: false },
-    goalTarget: { type: Number, default: null }, // minor units
+    goalTarget: { type: Number, min: 0, default: null }, // minor units
     order: { type: Number, default: 0 },
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Account" }
 );
+accountSchema.index({ userId: 1 });
 export const Account = mongoose.models.Account || mongoose.model("Account", accountSchema);
 
 // Category Schema
@@ -52,20 +53,21 @@ const categorySchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true },
-    kind: { type: String, required: true }, // income | expense
+    kind: { type: String, enum: ["income", "expense"], required: true }, // income | expense
     color: { type: String, default: "#6366f1" },
     icon: { type: String, default: "tag" },
   },
   { timestamps: false, toJSON, toObject: toJSON, collection: "Category" } // Prisma schema didn't have createdAt for Category, but we can just use default schema
 );
+categorySchema.index({ userId: 1 });
 export const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
 
 // Transaction Schema
 const transactionSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    type: { type: String, required: true }, // income | expense | transfer
-    amount: { type: Number, required: true }, // minor units, always positive
+    type: { type: String, enum: ["income", "expense", "transfer", "saving", "reimbursement"], required: true }, // income | expense | transfer
+    amount: { type: Number, min: 0, required: true }, // minor units, always positive
     date: { type: Date, default: Date.now },
     note: { type: String, default: "" },
     fromAccountId: { type: Schema.Types.ObjectId, ref: "Account", default: null },
@@ -74,6 +76,7 @@ const transactionSchema = new Schema(
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Transaction" }
 );
+transactionSchema.index({ userId: 1, date: -1 });
 
 transactionSchema.virtual("fromAccount", {
   ref: "Account",
@@ -103,14 +106,15 @@ const splitSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     transactionId: { type: Schema.Types.ObjectId, ref: "Transaction", required: true },
-    totalAmount: { type: Number, required: true }, // minor units
-    myShare: { type: Number, required: true }, // minor units
+    totalAmount: { type: Number, min: 0, required: true }, // minor units
+    myShare: { type: Number, min: 0, required: true }, // minor units
     splitNote: { type: String, default: "" },
     settled: { type: Boolean, default: false },
-    settledAmount: { type: Number, default: 0 }, // minor units
+    settledAmount: { type: Number, min: 0, default: 0 }, // minor units
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Split" }
 );
+splitSchema.index({ userId: 1 });
 
 splitSchema.virtual("transaction", {
   ref: "Transaction",

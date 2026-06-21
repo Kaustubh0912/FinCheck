@@ -5,6 +5,7 @@ import { AccountSheet } from "../components/AccountSheet";
 import { GoalActionSheet } from "../components/GoalActionSheet";
 import { formatMoney } from "../lib/format";
 import { Icon } from "../lib/icons";
+import { resolveThemeColor } from "../lib/colors";
 import type { Account } from "../lib/types";
 
 export function Accounts() {
@@ -96,7 +97,7 @@ export function Accounts() {
         }}
       >
         <button className="account-card" onClick={() => openEdit(a)} style={{ flex: 1, borderBottom: "none", paddingRight: 0 }}>
-          <span className="account-icon" style={{ background: a.color + "22", color: a.color }}>
+          <span className="account-icon" style={{ background: `color-mix(in srgb, ${resolveThemeColor(a.color)} 13%, transparent)`, color: resolveThemeColor(a.color) }}>
             <Icon name={a.icon} />
           </span>
           <span className="account-info">
@@ -140,7 +141,7 @@ export function Accounts() {
       >
         <button className="goal-info" onClick={() => openEdit(a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'grab', textAlign: 'left', width: '100%' }}>
           <div className="goal-name-wrap">
-            <span className="account-icon" style={{ background: a.color + "22", color: a.color, width: 32, height: 32, borderRadius: 8 }}>
+            <span className="account-icon" style={{ background: `color-mix(in srgb, ${resolveThemeColor(a.color)} 13%, transparent)`, color: resolveThemeColor(a.color), width: 32, height: 32, borderRadius: 8 }}>
               <Icon name={a.icon} />
             </span>
             <span className="goal-name">{a.name}</span>
@@ -151,7 +152,7 @@ export function Accounts() {
           </div>
         </button>
         <div className="goal-track">
-          <div className="goal-fill" style={{ width: `${progress}%`, background: a.color }} />
+          <div className="goal-fill" style={{ width: `${progress}%`, background: resolveThemeColor(a.color) }} />
         </div>
         <div className="goal-meta">
           <span>{formatMoney(a.balance, currency)} saved</span>

@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import { currencySymbol } from "../lib/format";
 import { Icon, accountTypeIcon } from "../lib/icons";
 import { errMessage } from "../api/client";
+import { resolveThemeColor } from "../lib/colors";
 import type { Account, AccountType } from "../lib/types";
 
 const TYPES: { key: AccountType; label: string; icon: string }[] = [
@@ -77,6 +78,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
 
   function remove() {
     if (!editing) return;
+    if (!window.confirm("Are you sure you want to delete this account?")) return;
     del.mutate(editing.id, { onSuccess: () => onClose(), onError: (e) => setError(errMessage(e)) });
   }
 
@@ -86,15 +88,22 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
       onClose={onClose}
       title={editing ? "Edit account" : "New account"}
       footer={
-        <div className="row gap">
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
           {editing && (
-            <button className="btn btn-ghost-danger" onClick={remove} disabled={del.isPending}>
-              <Icon name="trash" /> Delete
-            </button>
+            <div style={{ fontSize: "0.85rem", padding: "8px", background: "var(--expense-soft)", color: "var(--expense)", borderRadius: "6px", border: "1px solid var(--expense-soft)", textAlign: "left" }}>
+              <strong>Warning:</strong> Deleting an account will orphan all its transactions. Unless it was created by mistake, archiving is strongly recommended.
+            </div>
           )}
-          <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending}>
-            {save.isPending ? "Saving…" : editing ? "Save changes" : "Create account"}
-          </button>
+          <div className="row gap">
+            {editing && (
+              <button className="btn btn-ghost-danger" onClick={remove} disabled={del.isPending}>
+                <Icon name="trash" /> Delete
+              </button>
+            )}
+            <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending}>
+              {save.isPending ? "Saving…" : editing ? "Save changes" : "Create account"}
+            </button>
+          </div>
         </div>
       }
     >
@@ -136,7 +145,11 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
             inputMode="decimal"
             placeholder="0"
             value={openingBalance}
-            onChange={(e) => setOpeningBalance(e.target.value.replace(/[^0-9.-]/g, ""))}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9.-]/g, "");
+              const parts = val.split(".");
+              setOpeningBalance(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+            }}
           />
         </div>
       </div>
@@ -150,7 +163,11 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
             inputMode="decimal"
             placeholder="No goal set"
             value={goalTarget}
-            onChange={(e) => setGoalTarget(e.target.value.replace(/[^0-9.-]/g, ""))}
+            onChange={(e) => {
+              const val = e.target.value.replace(/[^0-9.]/g, "");
+              const parts = val.split(".");
+              setGoalTarget(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+            }}
           />
         </div>
         <p className="date-hint">Set a target balance to track your savings progress.</p>
@@ -168,7 +185,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
             <button
               key={c}
               className={`swatch ${color === c ? "swatch-active" : ""}`}
-              style={{ background: c }}
+              style={{ background: resolveThemeColor(c) }}
               onClick={() => setColor(c)}
               aria-label={`Colour ${c}`}
             />

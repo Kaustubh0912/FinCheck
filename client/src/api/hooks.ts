@@ -55,6 +55,11 @@ export function useReorderAccounts() {
       const previousAccounts = qc.getQueryData<Account[]>(["accounts"]);
       return { previousAccounts };
     },
+    onError: (err, updates, context) => {
+      if (context?.previousAccounts) {
+        qc.setQueryData(["accounts"], context.previousAccounts);
+      }
+    },
     onSettled: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }

@@ -3,6 +3,7 @@ import { Sheet } from "./Sheet";
 import { Icon } from "../lib/icons";
 import { useAccounts, useSaveTransaction } from "../api/hooks";
 import { currencySymbol, formatMoney } from "../lib/format";
+import { resolveThemeColor } from "../lib/colors";
 import { useAuth } from "../auth/AuthContext";
 import { errMessage } from "../api/client";
 import type { Account } from "../lib/types";
@@ -42,6 +43,13 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
     if (!value || value <= 0) return setError("Enter an amount greater than zero.");
     if (!sourceAccountId) return setError(`Select an account to ${mode === "add" ? "transfer from" : "withdraw to"}.`);
 
+    if (mode === "add") {
+      const sourceAcc = otherAccounts.find((a) => a.id === sourceAccountId);
+      if (sourceAcc && value * 100 > sourceAcc.balance) return setError("Amount exceeds account balance.");
+    } else {
+      if (value * 100 > goal.balance) return setError("Amount exceeds goal balance.");
+    }
+
     saveTxn.mutate(
       {
         type: "saving",
@@ -71,8 +79,8 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
         </button>
       }
     >
-      <div className="center" style={{ margin: "10px 0" }}>
-        <span className="account-icon" style={{ background: goal.color + "22", color: goal.color, width: 48, height: 48, fontSize: '1.4rem' }}>
+      <div className="goal-hero" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, margin: "10px 0 24px" }}>
+        <span className="account-icon" style={{ background: `color-mix(in srgb, ${resolveThemeColor(goal.color)} 13%, transparent)`, color: resolveThemeColor(goal.color), width: 48, height: 48, fontSize: '1.4rem' }}>
           <Icon name={goal.icon} />
         </span>
       </div>
@@ -85,7 +93,11 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
           placeholder="0"
           value={amount}
           autoFocus
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+          onChange={(e) => {
+            const val = e.target.value.replace(/[^0-9.]/g, "");
+            const parts = val.split(".");
+            setAmount(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+          }}
         />
       </label>
 
@@ -96,7 +108,7 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
             <button
               key={a.id}
               className={`chip ${sourceAccountId === a.id ? "chip-active" : ""}`}
-              style={sourceAccountId === a.id ? { borderColor: a.color, color: a.color } : undefined}
+              style={sourceAccountId === a.id ? { borderColor: resolveThemeColor(a.color), color: resolveThemeColor(a.color) } : undefined}
               onClick={() => setSourceAccountId(a.id)}
             >
               <Icon name={a.icon} /> {a.name} ({formatMoney(a.balance, user?.currency || "INR")})

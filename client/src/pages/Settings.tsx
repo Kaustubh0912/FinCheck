@@ -6,6 +6,7 @@ import { Icon } from "../lib/icons";
 import { parseSmartRange, rangeLabel } from "../lib/date";
 import { useTheme } from "../lib/theme";
 import { useInstallPrompt } from "../lib/useInstall";
+import { currencySymbol } from "../lib/format";
 import { CategorySheet } from "../components/CategorySheet";
 import { SmartRangeInput } from "../components/SmartRangeInput";
 import { PasswordSheet } from "../components/PasswordSheet";
@@ -40,8 +41,14 @@ export function Settings() {
     setSavingProfile(true);
     setProfileMsg("");
     try {
+      if (!name.trim()) {
+        throw new Error("Name cannot be empty");
+      }
       const budgetNum = parseFloat(budgetInput);
-      const monthlyBudget = !isNaN(budgetNum) ? Math.round(budgetNum * 100) : null;
+      if (budgetInput.trim() !== "" && (isNaN(budgetNum) || budgetNum <= 0)) {
+        throw new Error("Budget must be greater than 0");
+      }
+      const monthlyBudget = budgetInput.trim() !== "" && !isNaN(budgetNum) ? Math.round(budgetNum * 100) : null;
       const res = await api.patch<{ user: typeof user }>("/auth/me", {
         name,
         monthlyBudget,
@@ -147,7 +154,7 @@ export function Settings() {
         <div className="field">
           <label className="field-label">Monthly budget</label>
           <div className="amount-field small">
-            <span className="amount-symbol">₹</span>
+            <span className="amount-symbol">{currencySymbol(user?.currency)}</span>
             <input
               type="number"
               inputMode="decimal"
@@ -162,7 +169,7 @@ export function Settings() {
         <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile}>
           {savingProfile ? "Saving…" : "Save profile"}
         </button>
-        {profileMsg && <span className="muted save-msg">{profileMsg}</span>}
+        {profileMsg && <span className={profileMsg === "Saved" ? "text-success save-msg" : "form-error save-msg"} style={{ display: "inline-block", marginTop: "8px" }}>{profileMsg}</span>}
         <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
           <p className="field-label" style={{ marginBottom: 10 }}>Password</p>
           <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
@@ -244,7 +251,13 @@ export function Settings() {
       <CategorySheet open={catSheet} editing={editingCat} defaultKind={newKind} onClose={() => setCatSheet(false)} />
       <PasswordSheet
         open={passwordSheetOpen}
-        onClose={() => setPasswordSheetOpen(false)}
+        onClose={() => {
+          setPasswordSheetOpen(false);
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setPasswordMsg("");
+        }}
         currentPassword={currentPassword}
         setCurrentPassword={setCurrentPassword}
         newPassword={newPassword}

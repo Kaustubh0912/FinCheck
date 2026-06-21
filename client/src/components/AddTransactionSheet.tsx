@@ -5,6 +5,7 @@ import { Icon } from "../lib/icons";
 import { useAccounts, useCategories, useSaveTransaction, useDeleteTransaction, useCreateSplit } from "../api/hooks";
 import { useAuth } from "../auth/AuthContext";
 import { currencySymbol } from "../lib/format";
+import { resolveThemeColor } from "../lib/colors";
 import { errMessage } from "../api/client";
 import type { Transaction, TxnType } from "../lib/types";
 
@@ -47,6 +48,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const [date, setDate] = useState(todayInput());
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const liveAccounts = useMemo(() => accounts.filter((a) => !a.archived && a.type !== "savings"), [accounts]);
   const catsForType = useMemo(
@@ -80,6 +82,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       setNote("");
     }
     setError("");
+    setSuccess(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -90,13 +93,14 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       if (e.key !== "Enter" || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "TEXTAREA") return;
+      if (saveTxn.isPending || createSplit.isPending) return;
       e.preventDefault();
       submit();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing, splitMode, numPeople, myShare]);
+  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending]);
 
   function submit() {
     setError("");
@@ -114,6 +118,9 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       if (shareValue > value) return setError("Your share cannot be greater than the total amount.");
       if (!fromAccountId) return setError("Choose the account to take money from.");
       
+      const sourceAcc = liveAccounts.find((a) => a.id === fromAccountId);
+      if (sourceAcc && value * 100 > sourceAcc.balance) return setError("Amount exceeds account balance.");
+
       createSplit.mutate(
         {
           totalAmount: value,
@@ -124,7 +131,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           date: new Date(date + "T12:00:00").toISOString(),
         },
         {
-          onSuccess: () => onClose(),
+          onSuccess: () => setSuccess(true),
           onError: (e: any) => setError(errMessage(e)),
         }
       );
@@ -134,6 +141,13 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     if (type !== "income" && !fromAccountId) return setError("Choose the account to take money from.");
     if (type !== "expense" && !toAccountId) return setError("Choose the account to add money to.");
     if (type === "transfer" && fromAccountId === toAccountId) return setError("Pick two different accounts.");
+
+    if (type !== "income") {
+      const sourceAcc = liveAccounts.find((a) => a.id === fromAccountId);
+      if (sourceAcc && value * 100 > sourceAcc.balance) {
+        return setError("Amount exceeds account balance.");
+      }
+    }
 
     saveTxn.mutate(
       {
@@ -147,7 +161,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         toAccountId: type === "expense" ? null : toAccountId,
       },
       {
-        onSuccess: () => onClose(),
+        onSuccess: () => setSuccess(true),
         onError: (e) => setError(errMessage(e)),
       }
     );
@@ -159,6 +173,38 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   }
 
   const accentClass = `accent-${type}`;
+
+  if (success || error) {
+    return (
+      <Sheet open={open} onClose={onClose} title={editing ? "Edit transaction" : "New transaction"}>
+        <div className="feedback-screen animate-pop" style={{ display: "flex", flexDirection: "column", minHeight: "50vh", justifyContent: "center", alignItems: "center" }}>
+          <div style={{ color: success ? "var(--income)" : "var(--expense)", fontSize: 80, textAlign: "center", marginBottom: 24 }}>
+            <Icon name={success ? "circle-check" : "circle-xmark"} />
+          </div>
+          <h2 style={{ textAlign: "center", marginBottom: 8 }}>
+            {success ? (editing ? "Changes saved" : "Transaction added") : "Issue detected"}
+          </h2>
+          <p className="muted" style={{ textAlign: "center", marginBottom: 32, fontSize: "1.05rem" }}>
+            {success ? "Your transaction has been successfully recorded." : error}
+          </p>
+          <div className="row gap" style={{ justifyContent: "center" }}>
+            {success && !editing ? (
+              <button className="btn btn-ghost muted" style={{ opacity: 0.8 }} onClick={() => { setSuccess(false); setAmount(""); setNote(""); }}>
+                Add another
+              </button>
+            ) : null}
+            <button 
+              className="btn btn-ghost muted" 
+              style={{ opacity: 0.8 }}
+              onClick={success ? onClose : () => setError("")}
+            >
+              {success ? "Done" : "Try again"}
+            </button>
+          </div>
+        </div>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet
@@ -201,7 +247,11 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           placeholder="0"
           value={amount}
           autoFocus
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+          onChange={(e) => {
+            const val = e.target.value.replace(/[^0-9.]/g, "");
+            const parts = val.split(".");
+            setAmount(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+          }}
         />
       </label>
 
@@ -253,7 +303,11 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
                 inputMode="decimal"
                 placeholder="0"
                 value={myShare}
-                onChange={(e) => setMyShare(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9.]/g, "");
+                  const parts = val.split(".");
+                  setMyShare(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+                }}
               />
             </label>
           )}
@@ -284,7 +338,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
                   <button
                     key={c.id}
                     className={`chip ${categoryId === c.id ? "chip-active" : ""}`}
-                    style={categoryId === c.id ? { borderColor: c.color, color: c.color } : undefined}
+                    style={categoryId === c.id ? { borderColor: resolveThemeColor(c.color), color: resolveThemeColor(c.color) } : undefined}
                     onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)}
                   >
                     <Icon name={c.icon} /> {c.name}
@@ -308,8 +362,6 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           onChange={(e) => setNote(e.target.value)}
         />
       </div>
-
-      {error && <p className="form-error">{error}</p>}
     </Sheet>
   );
 }
@@ -333,7 +385,7 @@ function AccountPicker({
           <button
             key={a.id}
             className={`chip ${value === a.id ? "chip-active" : ""}`}
-            style={value === a.id ? { borderColor: a.color, color: a.color } : undefined}
+            style={value === a.id ? { borderColor: resolveThemeColor(a.color), color: resolveThemeColor(a.color) } : undefined}
             onClick={() => onChange(a.id)}
           >
             <Icon name={a.icon} /> {a.name}

@@ -13,6 +13,44 @@ export interface AccountWithBalance {
   balance: number;
 }
 
+export async function hasSufficientBalance(
+  accountId: string,
+  amount: number,
+  session: mongoose.ClientSession,
+  excludeTransactionId?: string
+): Promise<boolean> {
+  const accountObjectId = new mongoose.Types.ObjectId(accountId);
+
+  let inflowMatch: any = { toAccountId: accountObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] } };
+  let outflowMatch: any = { fromAccountId: accountObjectId, type: { $in: ["expense", "transfer", "saving"] } };
+
+  if (excludeTransactionId) {
+    const excludeId = new mongoose.Types.ObjectId(excludeTransactionId);
+    inflowMatch._id = { $ne: excludeId };
+    outflowMatch._id = { $ne: excludeId };
+  }
+
+  const [account, inflowResult, outflowResult] = await Promise.all([
+    Account.findById(accountObjectId).session(session),
+    Transaction.aggregate([
+      { $match: inflowMatch },
+      { $group: { _id: null, amount: { $sum: "$amount" } } }
+    ]).session(session),
+    Transaction.aggregate([
+      { $match: outflowMatch },
+      { $group: { _id: null, amount: { $sum: "$amount" } } }
+    ]).session(session),
+  ]);
+
+  if (!account) return false;
+
+  const inflow = inflowResult[0]?.amount ?? 0;
+  const outflow = outflowResult[0]?.amount ?? 0;
+
+  const currentBalance = account.openingBalance + inflow - outflow;
+  return (currentBalance - amount) >= 0;
+}
+
 /** Compute live balances for all of a user's accounts. */
 export async function accountsWithBalances(userId: string): Promise<AccountWithBalance[]> {
   const userObjectId = new mongoose.Types.ObjectId(userId);

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useSummary, useTransactions } from "../api/hooks";
 import { formatMoney, monthLabel, monthRange } from "../lib/format";
+import { resolveThemeColor } from "../lib/colors";
 import { Icon } from "../lib/icons";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
@@ -101,7 +102,8 @@ export function Dashboard() {
                   >
                     <div className="bd-head">
                       <span className="bd-name">
-                        <Icon name={c.icon} style={{ color: c.color }} />
+                        <div className="bd-dot" style={{ backgroundColor: resolveThemeColor(c.color) }} />
+                        <Icon name={c.icon} style={{ color: resolveThemeColor(c.color) }} />
                         <span>{c.name}</span>
                       </span>
                       <span className="bd-amt">{formatMoney(c.amount, currency)}</span>
@@ -146,8 +148,11 @@ export function Dashboard() {
             if (!cat) return "Transactions";
             return (
               <span className="row gap">
-                <Icon name={cat.icon} style={{ color: cat.color }} />
-                <span>{cat.name}</span>
+                <div className="bd-name">
+                  <div className="bd-dot" style={{ backgroundColor: resolveThemeColor(cat.color) }} />
+                  <Icon name={cat.icon} style={{ color: resolveThemeColor(cat.color) }} />
+                  <span>{cat.name}</span>
+                </div>
               </span>
             );
           })()

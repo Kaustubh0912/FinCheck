@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useSplits, useRepaySplit, useAccounts } from "../api/hooks";
 import { formatMoney } from "../lib/format";
 import { Icon } from "../lib/icons";
+import { resolveThemeColor } from "../lib/colors";
 import type { Split } from "../lib/types";
 
 export function Splits() {
@@ -107,7 +108,7 @@ function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split;
                     <button
                       key={a.id}
                       className={`chip ${toAccountId === a.id ? "chip-active" : ""}`}
-                      style={toAccountId === a.id ? { borderColor: a.color, color: a.color } : undefined}
+                      style={toAccountId === a.id ? { borderColor: resolveThemeColor(a.color), color: resolveThemeColor(a.color) } : undefined}
                       onClick={() => setToAccountId(a.id)}
                     >
                       <Icon name={a.icon} /> {a.name}
