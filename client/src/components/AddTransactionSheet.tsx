@@ -39,6 +39,8 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const [type, setType] = useState<TxnType | "split">("expense");
   const [amount, setAmount] = useState("");
   const [myShare, setMyShare] = useState("");
+  const [splitMode, setSplitMode] = useState<"equal" | "unequal">("unequal");
+  const [numPeople, setNumPeople] = useState(2);
   const [fromAccountId, setFromAccountId] = useState<string>("");
   const [toAccountId, setToAccountId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
@@ -68,6 +70,8 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       setType("expense");
       setAmount("");
       setMyShare("");
+      setSplitMode("unequal");
+      setNumPeople(2);
       const first = liveAccounts[0]?.id ?? "";
       setFromAccountId(first);
       setToAccountId(liveAccounts[1]?.id ?? "");
@@ -92,7 +96,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing]);
+  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing, splitMode, numPeople, myShare]);
 
   function submit() {
     setError("");
@@ -100,8 +104,13 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     if (!value || value <= 0) return setError("Enter an amount greater than zero.");
     
     if (type === "split") {
-      const shareValue = Number(myShare);
-      if (!shareValue || shareValue <= 0) return setError("Enter your share.");
+      let shareValue: number;
+      if (splitMode === "equal") {
+        shareValue = Math.round((value / numPeople) * 100) / 100;
+      } else {
+        shareValue = Number(myShare);
+        if (!shareValue || shareValue <= 0) return setError("Enter your share.");
+      }
       if (shareValue > value) return setError("Your share cannot be greater than the total amount.");
       if (!fromAccountId) return setError("Choose the account to take money from.");
       
@@ -197,17 +206,58 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       </label>
 
       {type === "split" && (
-        <label className="amount-field small" style={{ marginTop: -10 }}>
-          <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
-          <span className="amount-symbol">{symbol}</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0"
-            value={myShare}
-            onChange={(e) => setMyShare(e.target.value.replace(/[^0-9.]/g, ""))}
-          />
-        </label>
+        <>
+          <div className="split-mode-toggle">
+            <button
+              className={splitMode === "equal" ? "active" : ""}
+              onClick={() => setSplitMode("equal")}
+            >
+              Split equally
+            </button>
+            <button
+              className={splitMode === "unequal" ? "active" : ""}
+              onClick={() => setSplitMode("unequal")}
+            >
+              Split unequally
+            </button>
+          </div>
+
+          {splitMode === "equal" ? (
+            <div className="field">
+              <label className="field-label">Number of people (including you)</label>
+              <div className="people-stepper">
+                <button
+                  onClick={() => setNumPeople((n) => Math.max(2, n - 1))}
+                  disabled={numPeople <= 2}
+                  style={numPeople <= 2 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+                >
+                  <Icon name="minus" />
+                </button>
+                <span className="count">{numPeople}</span>
+                <button onClick={() => setNumPeople((n) => n + 1)}>
+                  <Icon name="plus" />
+                </button>
+              </div>
+              {amount && Number(amount) > 0 && (
+                <div className="share-preview">
+                  Your share: {symbol}{(Number(amount) / numPeople).toFixed(2)}
+                </div>
+              )}
+            </div>
+          ) : (
+            <label className="amount-field small" style={{ marginTop: -10 }}>
+              <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
+              <span className="amount-symbol">{symbol}</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0"
+                value={myShare}
+                onChange={(e) => setMyShare(e.target.value.replace(/[^0-9.]/g, ""))}
+              />
+            </label>
+          )}
+        </>
       )}
 
       {liveAccounts.length === 0 ? (
