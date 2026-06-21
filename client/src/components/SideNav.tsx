@@ -4,6 +4,7 @@ import { Icon } from "../lib/icons";
 
 const items = [
   { to: "/", name: "home", label: "Home" },
+  { to: "/budget", name: "chart-line", label: "Budget" },
   { to: "/transactions", name: "activity", label: "Activity" },
   { to: "/splits", name: "transfer", label: "Splits" },
   { to: "/accounts", name: "wallet", label: "Accounts" },

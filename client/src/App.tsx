@@ -8,6 +8,7 @@ import { Transactions } from "./pages/Transactions";
 import { Accounts } from "./pages/Accounts";
 import { Settings } from "./pages/Settings";
 import { Splits } from "./pages/Splits";
+import { Budget } from "./pages/Budget";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -29,6 +30,7 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/budget" element={<Budget />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/splits" element={<Splits />} />
         <Route path="/accounts" element={<Accounts />} />

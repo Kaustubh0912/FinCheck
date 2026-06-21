@@ -7,7 +7,6 @@ import { Icon } from "../lib/icons";
 import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
 import { Sheet } from "../components/Sheet";
-import { BudgetWidget } from "../components/BudgetWidget";
 import type { Transaction } from "../lib/types";
 
 export function Dashboard() {
@@ -84,12 +83,6 @@ export function Dashboard() {
               <span className="stat-value amt-expense">{formatMoney(summary?.expense ?? 0, currency)}</span>
             </div>
           </div>
-
-          <BudgetWidget 
-            expense={summary?.expense ?? 0} 
-            todayExpense={summary?.todayExpense ?? 0}
-            monthlyBudget={user?.monthlyBudget} 
-          />
 
           {cats.length > 0 && (
             <section className="card">

@@ -11,19 +11,6 @@ interface BudgetWidgetProps {
 export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWidgetProps) {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
-  const [checkAmount, setCheckAmount] = useState("");
-  const [checkResult, setCheckResult] = useState<"YES" | "NO" | null>(null);
-
-  // Clear check result after 4 seconds
-  useEffect(() => {
-    if (checkResult) {
-      const timer = setTimeout(() => {
-        setCheckResult(null);
-        setCheckAmount("");
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [checkResult]);
 
   if (!monthlyBudget) {
     return null;
@@ -50,18 +37,6 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
   const expectedSpend = (monthlyBudget / totalDays) * daysElapsed;
   const isOverPace = expense > expectedSpend;
   const paceDiff = Math.abs(expense - expectedSpend);
-
-  const handleCheck = () => {
-    const amt = parseFloat(checkAmount);
-    if (isNaN(amt) || amt <= 0) return;
-    
-    // compare in minor units
-    if (Math.round(amt * 100) <= leftToday) {
-      setCheckResult("YES");
-    } else {
-      setCheckResult("NO");
-    }
-  };
 
   return (
     <section className="card budget-widget">
@@ -109,38 +84,6 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
           <span className="muted">
             You're {formatMoney(paceDiff, currency)} under pace
           </span>
-        )}
-      </div>
-
-      <div className="budget-check">
-        {!checkResult ? (
-          <div className="field">
-            <label className="field-label">Can I afford this?</label>
-            <div className="amount-field small" style={{ marginTop: 0 }}>
-              <span className="amount-symbol">₹</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder="0"
-                value={checkAmount}
-                onChange={(e) => setCheckAmount(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCheck(); }}
-                style={{ fontSize: "1.25rem" }}
-              />
-              <button className="btn btn-pill sm" onClick={handleCheck} style={{ marginLeft: 8, flexShrink: 0 }}>
-                Check
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="budget-check-result">
-            <div className={`budget-check-answer serif ${checkResult === "YES" ? "amt-income" : "amt-expense"}`}>
-              {checkResult}
-            </div>
-            <div className="muted" style={{ fontSize: "0.85rem", marginTop: 4 }}>
-              You have {formatMoney(Math.max(0, leftToday), currency)} left today
-            </div>
-          </div>
         )}
       </div>
     </section>
