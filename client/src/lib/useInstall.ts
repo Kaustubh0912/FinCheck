@@ -54,10 +54,15 @@ export function useInstallPrompt() {
     fetch("https://api.github.com/repos/Kaustubh0912/FinCheck/releases/latest")
       .then(r => r.json())
       .then(data => {
-        if (data.tag_name && data.tag_name !== CURRENT_APP_VERSION) {
-          setUpdateAvailable(true);
-          const apk = data.assets?.find((a: any) => a.name.endsWith(".apk"));
-          setLatestDownloadUrl(apk?.browser_download_url ?? null);
+        if (data.tag_name) {
+          const currentBuild = parseInt(CURRENT_APP_VERSION.replace(/[^0-9]/g, ""), 10) || 0;
+          const latestBuild = parseInt(data.tag_name.replace(/[^0-9]/g, ""), 10) || 0;
+          
+          if (latestBuild > currentBuild) {
+            setUpdateAvailable(true);
+            const apk = data.assets?.find((a: any) => a.name.endsWith(".apk"));
+            setLatestDownloadUrl(apk?.browser_download_url ?? null);
+          }
         }
       })
       .catch(() => { /* silently fail — don't block the app */ });
