@@ -18,6 +18,11 @@ function isStandalone(): boolean {
 export function useInstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(isStandalone);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [latestDownloadUrl, setLatestDownloadUrl] = useState<string | null>(null);
+
+  // Current hardcoded version (bump this when releasing a new APK)
+  const CURRENT_APP_VERSION = "build-1";
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -42,6 +47,22 @@ export function useInstallPrompt() {
 
   const isAndroid = /android/i.test(window.navigator.userAgent);
 
+  useEffect(() => {
+    // Only check when running as installed Android app
+    if (!isStandalone() || !isAndroid) return;
+    
+    fetch("https://api.github.com/repos/Kaustubh0912/FinCheck/releases/latest")
+      .then(r => r.json())
+      .then(data => {
+        if (data.tag_name && data.tag_name !== CURRENT_APP_VERSION) {
+          setUpdateAvailable(true);
+          const apk = data.assets?.find((a: any) => a.name.endsWith(".apk"));
+          setLatestDownloadUrl(apk?.browser_download_url ?? null);
+        }
+      })
+      .catch(() => { /* silently fail — don't block the app */ });
+  }, [isAndroid]);
+
   async function install() {
     if (isAndroid) {
       window.location.href = "https://github.com/Kaustubh0912/FinCheck/releases/latest/download/app-release.apk";
@@ -53,5 +74,11 @@ export function useInstallPrompt() {
     setDeferred(null);
   }
 
-  return { canInstall: !!deferred || isAndroid, install, installed, isIOS, isAndroid };
+  function update() {
+    if (latestDownloadUrl) {
+      window.location.href = latestDownloadUrl;
+    }
+  }
+
+  return { canInstall: !!deferred || isAndroid, install, installed, isIOS, isAndroid, updateAvailable, update };
 }

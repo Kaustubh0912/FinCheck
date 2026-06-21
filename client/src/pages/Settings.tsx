@@ -15,7 +15,7 @@ export function Settings() {
   const { user, logout, setUser } = useAuth();
   const { data: categories = [] } = useCategories();
   const [theme, setTheme] = useTheme();
-  const { canInstall, install, installed, isIOS, isAndroid } = useInstallPrompt();
+  const { canInstall, install, installed, isIOS, isAndroid, updateAvailable, update } = useInstallPrompt();
 
   const [name, setName] = useState(user?.name ?? "");
   const [budgetInput, setBudgetInput] = useState(user?.monthlyBudget ? (user.monthlyBudget / 100).toString() : "");
@@ -202,6 +202,18 @@ export function Settings() {
         </div>
         <div className="chip-grid">{income.map(catChip)}</div>
       </section>
+
+      {installed && updateAvailable && (
+        <section className="card">
+          <h2 className="card-title">Update app</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            A newer version of FinCheck is available.
+          </p>
+          <button className="btn btn-primary" onClick={update}>
+            <Icon name="download" /> Update FinCheck
+          </button>
+        </section>
+      )}
 
       {!installed && (
         <section className="card">
