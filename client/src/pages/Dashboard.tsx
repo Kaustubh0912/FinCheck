@@ -40,9 +40,6 @@ export function Dashboard() {
           <p className="hello">Hello, {user?.name?.split(" ")[0] ?? "there"}</p>
           <h1>Overview</h1>
         </div>
-        <Link to="/settings" className="icon-btn" aria-label="Settings">
-          <Icon name="settings" />
-        </Link>
       </header>
 
       <section className="networth-card">
