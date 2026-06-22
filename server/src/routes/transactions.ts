@@ -29,7 +29,7 @@ async function assertOwnership(
 transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
     const { from, to, accountId, type, categoryId, limit, skip } = req.query as Record<string, string>;
-    const where: Record<string, unknown> = { userId: req.userId };
+    const where: Record<string, any> = { userId: req.userId };
     if (type && ["income", "expense", "transfer", "saving", "reimbursement"].includes(type)) where.type = type;
     if (categoryId) {
       if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -120,7 +120,7 @@ transactionsRouter.post("/", async (req: AuthedRequest, res, next) => {
       await session.endSession();
     }
 
-    const populated = await Transaction.findById(transaction._id)
+    const populated = await Transaction.findById(transaction!._id)
       .populate("fromAccount", "id name icon color")
       .populate("toAccount", "id name icon color")
       .populate("category", "id name icon color kind");
@@ -212,7 +212,7 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
       await session.endSession();
     }
 
-    const populated = await Transaction.findById(transaction._id)
+    const populated = await Transaction.findById(transaction!._id)
       .populate("fromAccount", "id name icon color")
       .populate("toAccount", "id name icon color")
       .populate("category", "id name icon color kind");

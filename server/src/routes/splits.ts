@@ -10,7 +10,7 @@ splitsRouter.use(requireAuth);
 
 splitsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
-    const query: Record<string, unknown> = { userId: req.userId };
+    const query: Record<string, any> = { userId: req.userId };
     if (req.query.settled === "true") query.settled = true;
     if (req.query.settled === "false") query.settled = false;
     if (req.query.from || req.query.to) {
