@@ -30,15 +30,15 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange } },
+      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: { $ne: true } } },
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: { $gte: todayStart, $lt: todayEnd } } },
+      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: { $gte: todayStart, $lt: todayEnd }, excludeFromBudget: { $ne: true } } },
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange } },
+      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: { $ne: true } } },
       { $group: { _id: "$categoryId", amount: { $sum: "$amount" } } },
     ]),
     Category.find({ userId }),

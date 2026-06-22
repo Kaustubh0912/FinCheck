@@ -103,6 +103,7 @@ transactionsRouter.post("/", async (req: AuthedRequest, res, next) => {
           fromAccountId,
           toAccountId,
           categoryId,
+          excludeFromBudget: d.excludeFromBudget ?? false,
         }], { session });
         
         transaction = created[0];
@@ -174,6 +175,7 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
         owned.fromAccountId = fromAccountId;
         owned.toAccountId = toAccountId;
         owned.categoryId = categoryId;
+        owned.excludeFromBudget = d.excludeFromBudget ?? false;
 
         await owned.save({ session });
         transaction = owned;

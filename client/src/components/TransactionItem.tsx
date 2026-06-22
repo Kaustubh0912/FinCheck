@@ -41,7 +41,14 @@ export function TransactionItem({
       </span>
       <span className="txn-main">
         <span className="txn-title">{title}</span>
-        <span className="txn-sub">{subtitle}</span>
+        <span className="txn-sub">
+          {subtitle}
+          {txn.excludeFromBudget && (
+            <span className="off-budget-badge">
+              <Icon name="eye-off" /> Off-budget
+            </span>
+          )}
+        </span>
       </span>
       <span className={`txn-amount ${amountClass}`}>
         {sign}

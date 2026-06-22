@@ -73,6 +73,7 @@ const transactionSchema = new Schema(
     fromAccountId: { type: Schema.Types.ObjectId, ref: "Account", default: null },
     toAccountId: { type: Schema.Types.ObjectId, ref: "Account", default: null },
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", default: null },
+    excludeFromBudget: { type: Boolean, default: false },
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Transaction" }
 );

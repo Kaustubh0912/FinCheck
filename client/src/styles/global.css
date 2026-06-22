@@ -294,8 +294,10 @@ a { color: inherit; text-decoration: none; }
 }
 .txn-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .txn-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.txn-sub { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.txn-sub { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
 .txn-sub svg { font-size: 0.7em; margin: 0 3px; opacity: 0.7; }
+.off-budget-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 4px; background: var(--bg-2); border-radius: 4px; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; font-weight: 500; }
+.off-budget-badge svg { margin: 0; font-size: 1em; opacity: 1; }
 .txn-amount { font-size: 1.05rem; white-space: nowrap; }
 
 .amt-income { color: var(--income); }

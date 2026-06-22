@@ -47,6 +47,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const [categoryId, setCategoryId] = useState<string>("");
   const [date, setDate] = useState(todayInput());
   const [note, setNote] = useState("");
+  const [excludeFromBudget, setExcludeFromBudget] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -68,6 +69,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       setCategoryId(editing.categoryId ?? "");
       setDate(todayInput(editing.date));
       setNote(editing.note);
+      setExcludeFromBudget(editing.excludeFromBudget ?? false);
     } else {
       setType("expense");
       setAmount("");
@@ -80,6 +82,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       setCategoryId("");
       setDate(todayInput());
       setNote("");
+      setExcludeFromBudget(false);
     }
     setError("");
     setSuccess(false);
@@ -159,6 +162,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         categoryId: type === "transfer" ? null : categoryId || null,
         fromAccountId: type === "income" ? null : fromAccountId,
         toAccountId: type === "expense" ? null : toAccountId,
+        excludeFromBudget,
       },
       {
         onSuccess: () => setSuccess(true),
@@ -362,6 +366,22 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           onChange={(e) => setNote(e.target.value)}
         />
       </div>
+
+      {(type === "expense" || type === "saving" || type === "split") && (
+        <label className="toggle-row" style={{ marginTop: 16 }}>
+          <span>
+            Exclude from budget
+            <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2, fontWeight: "normal" }}>
+              Don't count this against daily/monthly allowance
+            </div>
+          </span>
+          <input
+            type="checkbox"
+            checked={excludeFromBudget}
+            onChange={(e) => setExcludeFromBudget(e.target.checked)}
+          />
+        </label>
+      )}
     </Sheet>
   );
 }

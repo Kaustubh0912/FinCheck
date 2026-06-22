@@ -54,6 +54,7 @@ const baseTxn = z.object({
   categoryId: z.string().optional().nullable(),
   fromAccountId: z.string().optional().nullable(),
   toAccountId: z.string().optional().nullable(),
+  excludeFromBudget: z.boolean().optional(),
 });
 
 export const transactionSchema = baseTxn

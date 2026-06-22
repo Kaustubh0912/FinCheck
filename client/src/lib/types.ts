@@ -68,6 +68,7 @@ export interface Transaction {
   toAccount: AccountRef | null;
   category: CategoryRef | null;
   createdAt: string;
+  excludeFromBudget?: boolean;
 }
 
 export interface Summary {
@@ -88,4 +89,5 @@ export interface TransactionInput {
   categoryId?: string | null;
   fromAccountId?: string | null;
   toAccountId?: string | null;
+  excludeFromBudget?: boolean;
 }
