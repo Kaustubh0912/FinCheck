@@ -90,8 +90,14 @@ export function Budget() {
     const r3Label = "Ripple on remaining days";
     const newDailyBudget = daysLeft - 1 > 0 ? Math.max(0, newMonthLeft / (daysLeft - 1)) : 0;
     const diffDaily = todaysBudget - newDailyBudget;
-    const r3Value = `Daily allowance drops from ${formatMoney(todaysBudget, currency)} to ${formatMoney(newDailyBudget, currency)}`;
-    const r3Detail = `${formatMoney(diffDaily, currency)} less per day`;
+    const isIncrease = diffDaily < 0;
+    const absDiffDaily = Math.abs(diffDaily);
+    const r3Value = diffDaily === 0 
+      ? `Daily allowance stays at ${formatMoney(todaysBudget, currency)}`
+      : `Daily allowance ${isIncrease ? "increases" : "drops"} from ${formatMoney(todaysBudget, currency)} to ${formatMoney(newDailyBudget, currency)}`;
+    const r3Detail = diffDaily === 0
+      ? `No change`
+      : `${formatMoney(absDiffDaily, currency)} ${isIncrease ? "more" : "less"} per day`;
     // threshold logic based on major units (rupees)
     const diffDailyMajor = diffDaily / 100;
     const r3Status = diffDailyMajor > 500 ? "red" : diffDailyMajor >= 200 ? "amber" : "green";
