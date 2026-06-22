@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useSplits, useRepaySplit, useAccounts } from "../api/hooks";
 import { formatMoney } from "../lib/format";
@@ -53,8 +53,14 @@ function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split;
   const [toAccountId, setToAccountId] = useState(liveAccounts[0]?.id ?? "");
 
   const totalOwed = split.totalAmount - split.myShare;
-  const progress = Math.min(100, (split.settledAmount / totalOwed) * 100);
+  const progress = totalOwed > 0 ? Math.min(100, (split.settledAmount / totalOwed) * 100) : 100;
   const remaining = totalOwed - split.settledAmount;
+
+  useEffect(() => {
+    if (!toAccountId && liveAccounts.length > 0) {
+      setToAccountId(liveAccounts[0].id);
+    }
+  }, [liveAccounts, toAccountId]);
 
   const handleRepay = () => {
     const val = parseFloat(amount);
@@ -80,7 +86,7 @@ function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split;
       </div>
 
       <div className="goal-meta">
-        <span>You paid <span className="serif">{formatMoney(split.totalAmount, currency)}</span> · Your share <span className="serif">{formatMoney(split.myShare, currency)}</span> · Owed to you <span className="serif">{formatMoney(totalOwed, currency)}</span></span>
+        <span>Total bill <span className="serif">{formatMoney(split.totalAmount, currency)}</span> · Your share <span className="serif">{formatMoney(split.myShare, currency)}</span> · Owed to you <span className="serif">{formatMoney(totalOwed, currency)}</span></span>
       </div>
 
       {!isSettled && (

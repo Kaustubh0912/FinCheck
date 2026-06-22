@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
-import { Icon } from "../lib/icons";
-import { errMessage } from "../api/client";
 
 interface PasswordSheetProps {
   open: boolean;

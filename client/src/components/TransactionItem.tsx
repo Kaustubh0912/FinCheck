@@ -53,6 +53,7 @@ export function TransactionItem({
       <span className={`txn-amount ${amountClass}`}>
         {sign}
         {formatMoney(txn.amount, currency)}
+        {txn.note?.startsWith("Split") && <span className="muted" style={{fontSize: "0.8em", marginLeft: 4}}>(split)</span>}
       </span>
     </button>
   );

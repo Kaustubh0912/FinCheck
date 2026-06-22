@@ -9,6 +9,7 @@ export function Login() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [currency, setCurrency] = useState("INR");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -18,7 +19,7 @@ export function Login() {
     setBusy(true);
     try {
       if (mode === "login") await login(email, password);
-      else await register(email, name, password, "INR");
+      else await register(email, name, password, currency);
     } catch (err) {
       setError(errMessage(err, "Could not sign in"));
     } finally {
@@ -46,10 +47,21 @@ export function Login() {
 
         <form onSubmit={submit} className="auth-form">
           {mode === "register" && (
-            <div className="field">
-              <label className="field-label">Name</label>
-              <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
-            </div>
+            <>
+              <div className="field">
+                <label className="field-label">Name</label>
+                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+              </div>
+              <div className="field">
+                <label className="field-label">Primary currency</label>
+                <select className="input select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <option value="INR">₹ Indian Rupee (INR)</option>
+                  <option value="USD">$ US Dollar (USD)</option>
+                  <option value="EUR">€ Euro (EUR)</option>
+                  <option value="GBP">£ British Pound (GBP)</option>
+                </select>
+              </div>
+            </>
           )}
           <div className="field">
             <label className="field-label">Email</label>

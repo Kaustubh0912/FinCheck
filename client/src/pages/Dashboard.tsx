@@ -26,7 +26,7 @@ export function Dashboard() {
     categoryId: selectedCategoryId ?? undefined,
     from: range.from,
     to: range.to,
-  });
+  }, !!selectedCategoryId);
 
   const shiftMonth = (delta: number) =>
     setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));

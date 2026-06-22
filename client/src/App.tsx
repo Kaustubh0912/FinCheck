@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./auth/AuthContext";
 import { Icon } from "./lib/icons";
 import { Layout } from "./components/Layout";
@@ -27,16 +28,18 @@ export default function App() {
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/budget" element={<Budget />} />
-        <Route path="/transactions" element={<Transactions />} />
-        <Route path="/splits" element={<Splits />} />
-        <Route path="/accounts" element={<Accounts />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <ErrorBoundary>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/budget" element={<Budget />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/splits" element={<Splits />} />
+          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </ErrorBoundary>
   );
 }

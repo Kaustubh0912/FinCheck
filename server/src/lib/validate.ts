@@ -7,13 +7,13 @@ export function toMinor(amount: number): number {
 
 export const registerSchema = z.object({
   email: z.string().email(),
-  name: z.string().min(1).max(80),
-  password: z.string().min(6).max(200),
+  name: z.string().trim().min(1).max(80),
+  password: z.string().min(8).max(200).regex(/.*[0-9].*/, "Password must contain at least one number"),
   currency: z.string().length(3).optional(),
 });
 
 export const profileUpdateSchema = z.object({
-  name: z.string().min(1).max(80).optional(),
+  name: z.string().trim().min(1).max(80).optional(),
   currency: z.string().length(3).optional(),
   monthlyBudget: z.number().nullable().optional(),
 });
@@ -26,12 +26,12 @@ export const loginSchema = z.object({
 export const accountTypes = ["bank", "cash", "card", "wallet", "investment", "savings", "other"] as const;
 
 export const accountSchema = z.object({
-  name: z.string().min(1).max(60),
+  name: z.string().trim().min(1).max(60),
   type: z.enum(accountTypes).default("bank"),
-  openingBalance: z.number().finite().default(0), // major units
-  goalTarget: z.number().finite().nullable().default(null), // major units
-  color: z.string().max(20).default("#6366f1"),
-  icon: z.string().max(24).default("bank"),
+  openingBalance: z.number().min(0).finite().default(0), // major units
+  goalTarget: z.number().min(0).finite().nullable().default(null), // major units
+  color: z.string().trim().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format").default("#6366f1"),
+  icon: z.string().trim().max(24).default("bank"),
 });
 
 export const accountUpdateSchema = accountSchema.partial().extend({
@@ -39,18 +39,18 @@ export const accountUpdateSchema = accountSchema.partial().extend({
 });
 
 export const categorySchema = z.object({
-  name: z.string().min(1).max(40),
+  name: z.string().trim().min(1).max(40),
   kind: z.enum(["income", "expense"]),
-  color: z.string().max(20).default("#6366f1"),
-  icon: z.string().max(24).default("tag"),
+  color: z.string().trim().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format").default("#6366f1"),
+  icon: z.string().trim().max(24).default("tag"),
 });
 
 export const categoryUpdateSchema = categorySchema.partial();
 
 const baseTxn = z.object({
-  amount: z.number().positive().finite(), // major units
+  amount: z.number().positive().finite().max(99999999.99), // major units
   date: z.coerce.date().optional(),
-  note: z.string().max(200).optional(),
+  note: z.string().trim().max(200).optional(),
   categoryId: z.string().optional().nullable(),
   fromAccountId: z.string().optional().nullable(),
   toAccountId: z.string().optional().nullable(),
@@ -75,23 +75,26 @@ export const transactionSchema = baseTxn
     }
   });
 
-export const transactionUpdateSchema = transactionSchema;
+export const transactionUpdateSchema = baseTxn
+  .extend({ type: z.enum(["income", "expense", "transfer", "saving", "reimbursement"]) })
+  .partial();
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6).max(200),
+  newPassword: z.string().min(8).max(200).regex(/.*[0-9].*/, "Password must contain at least one number"),
 });
 
 export const createSplitSchema = z.object({
-  totalAmount: z.number().positive().finite(), // major units
-  myShare: z.number().positive().finite(), // major units
+  totalAmount: z.number().positive().finite().max(99999999.99), // major units
+  myShare: z.number().positive().finite().max(99999999.99), // major units
   fromAccountId: z.string().min(1),
   categoryId: z.string().optional().nullable(),
-  note: z.string().max(200).optional(),
+  note: z.string().trim().max(200).optional(),
   date: z.coerce.date().optional(),
+  excludeFromBudget: z.boolean().optional(),
 });
 
 export const repaySplitSchema = z.object({
-  amount: z.number().positive().finite(), // major units
+  amount: z.number().positive().finite().max(99999999.99), // major units
   toAccountId: z.string().min(1),
 });

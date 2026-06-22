@@ -33,9 +33,14 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
   useEffect(() => {
     if (!open) return;
     setAmount("");
-    setSourceAccountId(otherAccounts[0]?.id || "");
     setError("");
-  }, [open, otherAccounts]);
+  }, [open]);
+
+  useEffect(() => {
+    if (open && !sourceAccountId && otherAccounts.length > 0) {
+      setSourceAccountId(otherAccounts[0].id);
+    }
+  }, [open, otherAccounts, sourceAccountId]);
 
   function submit() {
     setError("");

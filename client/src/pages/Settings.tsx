@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useCategories } from "../api/hooks";
 import { api, errMessage } from "../api/client";
@@ -37,6 +37,14 @@ export function Settings() {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState("");
 
+  const timer = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
+
   async function saveProfile() {
     setSavingProfile(true);
     setProfileMsg("");
@@ -55,7 +63,8 @@ export function Settings() {
       });
       if (res.data.user) setUser(res.data.user);
       setProfileMsg("Saved");
-      setTimeout(() => setProfileMsg(""), 1500);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => setProfileMsg(""), 2000);
     } catch (e) {
       setProfileMsg(errMessage(e));
     } finally {

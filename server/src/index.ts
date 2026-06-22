@@ -2,6 +2,9 @@ import path from "path";
 import fs from "fs";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoose from "mongoose";
 import { env } from "./env";
 import { connectDb } from "./db";
 import { authRouter } from "./auth/routes";
@@ -16,15 +19,27 @@ const app = express();
 // Render/Vercel terminate TLS at a proxy in front of the app.
 app.set("trust proxy", 1);
 
+app.use(helmet({
+  contentSecurityPolicy: false, // Don't break React app inline styles/scripts if not configured
+}));
+
 // CORS: open by default (token auth, no cookies). Restrict by setting
 // CLIENT_ORIGIN to a comma-separated list of allowed origins in production.
 const allowedOrigins = (process.env.CLIENT_ORIGIN ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : undefined));
+app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : { origin: false }));
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api", globalLimiter);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "fincheck" }));
 
@@ -56,9 +71,37 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: "Something went wrong on the server." });
 });
 
+let server: any;
+
 connectDb().then(() => {
-  app.listen(env.port, () => {
+  server = app.listen(env.port, () => {
     // eslint-disable-next-line no-console
     console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
   });
+});
+
+process.on("SIGTERM", () => {
+  console.log("[fincheck] SIGTERM received, shutting down gracefully");
+  if (server) {
+    server.close(() => {
+      mongoose.connection.close(false).then(() => {
+        process.exit(0);
+      });
+    });
+  } else {
+    process.exit(0);
+  }
+});
+
+process.on("SIGINT", () => {
+  console.log("[fincheck] SIGINT received, shutting down gracefully");
+  if (server) {
+    server.close(() => {
+      mongoose.connection.close(false).then(() => {
+        process.exit(0);
+      });
+    });
+  } else {
+    process.exit(0);
+  }
 });

@@ -77,7 +77,7 @@ export function Transactions() {
       ) : (
         groups.map(([day, items]) => {
           const dayTotal = items.reduce(
-            (sum, t) => sum + (t.type === "income" ? t.amount : t.type === "expense" ? -t.amount : 0),
+            (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : (t.type === "expense" || t.type === "saving" ? -t.amount : 0)),
             0
           );
           return (

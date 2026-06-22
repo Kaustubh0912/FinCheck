@@ -50,12 +50,12 @@ export function useReorderAccounts() {
   return useMutation({
     mutationFn: async (updates: { id: string; order: number }[]) =>
       await api.patch("/accounts/reorder", { updates }),
-    onMutate: async (updates) => {
+    onMutate: async () => {
       await qc.cancelQueries({ queryKey: ["accounts"] });
       const previousAccounts = qc.getQueryData<Account[]>(["accounts"]);
       return { previousAccounts };
     },
-    onError: (err, updates, context) => {
+    onError: (_err, _updates, context) => {
       if (context?.previousAccounts) {
         qc.setQueryData(["accounts"], context.previousAccounts);
       }
@@ -104,13 +104,14 @@ export interface TxnFilters {
   limit?: number;
 }
 
-export function useTransactions(filters: TxnFilters = {}) {
+export function useTransactions(filters: TxnFilters = {}, enabled = true) {
   return useQuery({
     queryKey: ["transactions", filters],
     queryFn: async () => {
       const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined && v !== ""));
       return (await api.get<Transaction[]>("/transactions", { params })).data;
     },
+    enabled,
   });
 }
 
@@ -149,7 +150,7 @@ export function useSummary(range?: { from: string; to: string }) {
   params.todayStart = todayStart.toISOString();
 
   return useQuery({
-    queryKey: ["summary", range],
+    queryKey: ["summary", range, params.todayStart],
     queryFn: async () =>
       (await api.get<Summary>("/summary", { params })).data,
   });
@@ -170,7 +171,7 @@ export function useSplits(settled?: boolean) {
 export function useCreateSplit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { totalAmount: number; myShare: number; fromAccountId: string; categoryId?: string | null; note?: string; date?: string }) => {
+    mutationFn: async (data: { totalAmount: number; myShare: number; fromAccountId: string; categoryId?: string | null; note?: string; date?: string; excludeFromBudget?: boolean }) => {
       const res = await api.post("/splits", data);
       return res.data;
     },

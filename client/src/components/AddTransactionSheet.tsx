@@ -103,7 +103,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending]);
+  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, excludeFromBudget, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending]);
 
   function submit() {
     setError("");
@@ -132,6 +132,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           categoryId: categoryId || null,
           note: note.trim(),
           date: new Date(date + "T12:00:00").toISOString(),
+          excludeFromBudget,
         },
         {
           onSuccess: () => setSuccess(true),

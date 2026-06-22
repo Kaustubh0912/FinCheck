@@ -53,10 +53,7 @@ Use this if you specifically want the frontend on Vercel's CDN.
 
 - **Free Render services sleep** after ~15 min idle; the first request then takes a
   few seconds to wake.
-- **No migrations** are needed — MongoDB collections were created with
-  `prisma db push`. If you change `server/prisma/schema.prisma`, run
-  `npx prisma db push` from `server/` (pointed at the prod `DATABASE_URL`) to apply.
-- `prisma generate` runs automatically on install (server `postinstall`).
+- **No migrations** are needed — Mongoose handles schema implicitly.
 - **Secrets:** never commit `.env`. Rotate the Atlas DB password if it was ever
   exposed, then update `DATABASE_URL` in your host's dashboard.
 - Local production smoke test: `npm run build && npm run start`, then open

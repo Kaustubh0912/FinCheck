@@ -61,8 +61,8 @@ npm run start      # serves everything on http://localhost:4000
 ```
 FinCheck/
 ├─ server/                 Express API
-│  ├─ prisma/schema.prisma  Data model (User, Account, Category, Transaction)
 │  └─ src/
+│     ├─ db.ts              Data model (User, Account, Category, Transaction)
 │     ├─ auth/              register / login / JWT middleware
 │     ├─ routes/            accounts, categories, transactions, summary
 │     └─ lib/               validation, balance computation, seed data

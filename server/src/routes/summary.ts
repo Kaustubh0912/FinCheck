@@ -26,7 +26,7 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   const [accounts, incomeAgg, expenseAgg, todayExpenseAgg, byCategoryRaw, categories] = await Promise.all([
     accountsWithBalances(userId),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["income", "reimbursement"] }, date: dateRange } },
+      { $match: { userId: userObjectId, type: { $in: ["income", "reimbursement"] }, date: dateRange, excludeFromBudget: { $ne: true } } },
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([

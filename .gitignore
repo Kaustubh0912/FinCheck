@@ -3,6 +3,8 @@ dist/
 build/
 .env
 *.local
+*.tsbuildinfo
+.vercel/
 
 # Logs
 *.log

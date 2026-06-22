@@ -19,9 +19,14 @@ splitsRouter.get("/", async (req: AuthedRequest, res, next) => {
       if (req.query.to) query.createdAt.$lte = new Date(String(req.query.to));
     }
 
+    const limit = req.query.limit ? Math.min(Number(req.query.limit), 1000) : 1000;
+    const skip = req.query.skip ? Number(req.query.skip) : 0;
+
     const splits = await Split.find(query)
       .populate("transaction")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     
     res.json(splits);
   } catch (err) {
@@ -36,7 +41,7 @@ splitsRouter.post("/", async (req: AuthedRequest, res, next) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
 
-    const { totalAmount, myShare, fromAccountId, categoryId, note, date } = parsed.data;
+    const { totalAmount, myShare, fromAccountId, categoryId, note, date, excludeFromBudget } = parsed.data;
 
     if (myShare > totalAmount) {
       return res.status(400).json({ error: "My share cannot be greater than the total amount." });
@@ -76,6 +81,7 @@ splitsRouter.post("/", async (req: AuthedRequest, res, next) => {
           categoryId: categoryId || null,
           note: note || "",
           date: date || new Date(),
+          excludeFromBudget: excludeFromBudget ?? false,
         }], { session });
         const txn = txnArr[0];
 

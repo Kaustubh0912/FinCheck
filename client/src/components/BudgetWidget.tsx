@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { formatMoney } from "../lib/format";
 import { useAuth } from "../auth/AuthContext";
 

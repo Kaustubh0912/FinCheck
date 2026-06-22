@@ -2,7 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import { Transaction, Account, Category, Split } from "../db";
 import { requireAuth, type AuthedRequest } from "../auth/middleware";
-import { transactionSchema, toMinor } from "../lib/validate";
+import { transactionSchema, transactionUpdateSchema, toMinor } from "../lib/validate";
 import { hasSufficientBalance } from "../lib/balances";
 
 export const transactionsRouter = Router();
@@ -28,7 +28,7 @@ async function assertOwnership(
 
 transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
-    const { from, to, accountId, type, categoryId, limit } = req.query as Record<string, string>;
+    const { from, to, accountId, type, categoryId, limit, skip } = req.query as Record<string, string>;
     const where: any = { userId: req.userId };
     if (type && ["income", "expense", "transfer", "saving", "reimbursement"].includes(type)) where.type = type;
     if (categoryId) {
@@ -45,12 +45,20 @@ transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
     }
     if (from || to) {
       where.date = {};
-      if (from) where.date.$gte = new Date(from);
-      if (to) where.date.$lte = new Date(to);
+      if (from) {
+        if (isNaN(Date.parse(from))) return res.status(400).json({ error: "Invalid from date" });
+        where.date.$gte = new Date(from);
+      }
+      if (to) {
+        if (isNaN(Date.parse(to))) return res.status(400).json({ error: "Invalid to date" });
+        where.date.$lte = new Date(to);
+      }
     }
-    const take = limit ? Math.min(Number(limit), 500) : 500; // Provide a default limit for safety if we remove undefined
+    const take = limit ? Math.min(Number(limit), 1000) : 1000;
+    const skipCount = skip ? Number(skip) : 0;
     const transactions = await Transaction.find(where)
       .sort({ date: -1, createdAt: -1 })
+      .skip(skipCount)
       .limit(take)
       .populate("fromAccount", "id name icon color")
       .populate("toAccount", "id name icon color")
@@ -133,18 +141,11 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
       return res.status(400).json({ error: "Invalid transaction ID" });
     }
 
-    const parsed = transactionSchema.safeParse(req.body);
+    const parsed = transactionUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid input" });
     }
     const d = parsed.data;
-
-    const requiresFrom = ["expense", "transfer", "saving"].includes(d.type);
-    const requiresTo = ["income", "transfer", "saving", "reimbursement"].includes(d.type);
-
-    const fromAccountId = requiresFrom ? (d.fromAccountId ?? null) : null;
-    const toAccountId = requiresTo ? (d.toAccountId ?? null) : null;
-    const categoryId = ["income", "expense"].includes(d.type) ? (d.categoryId ?? null) : null;
 
     const session = await mongoose.startSession();
     let transaction: any = null;
@@ -156,26 +157,53 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
           throw new Error("404:Transaction not found");
         }
 
-        const ownErr = await assertOwnership(req.userId!, d, session);
+        const newType = d.type ?? owned.type;
+        const newAmount = d.amount !== undefined ? toMinor(d.amount) : owned.amount;
+        
+        const requiresFrom = ["expense", "transfer", "saving"].includes(newType);
+        const requiresTo = ["income", "transfer", "saving", "reimbursement"].includes(newType);
+
+        let fromAccountId = owned.fromAccountId;
+        if (d.fromAccountId !== undefined) {
+          fromAccountId = requiresFrom ? (d.fromAccountId ?? null) : null;
+        } else if (!requiresFrom) {
+          fromAccountId = null;
+        }
+
+        let toAccountId = owned.toAccountId;
+        if (d.toAccountId !== undefined) {
+          toAccountId = requiresTo ? (d.toAccountId ?? null) : null;
+        } else if (!requiresTo) {
+          toAccountId = null;
+        }
+
+        let categoryId = owned.categoryId;
+        if (d.categoryId !== undefined) {
+          categoryId = ["income", "expense"].includes(newType) ? (d.categoryId ?? null) : null;
+        } else if (!["income", "expense"].includes(newType)) {
+          categoryId = null;
+        }
+
+        const ownErr = await assertOwnership(req.userId!, { fromAccountId, toAccountId, categoryId }, session);
         if (ownErr) {
           throw new Error(`400:${ownErr}`);
         }
 
         if (requiresFrom && fromAccountId) {
-          const ok = await hasSufficientBalance(fromAccountId, toMinor(d.amount), session, req.params.id);
+          const ok = await hasSufficientBalance(fromAccountId, newAmount, session, req.params.id);
           if (!ok) {
             throw new Error(`400:Insufficient balance in source account`);
           }
         }
 
-        owned.type = d.type;
-        owned.amount = toMinor(d.amount);
-        owned.date = d.date ?? owned.date;
-        owned.note = d.note ?? "";
+        owned.type = newType;
+        owned.amount = newAmount;
+        if (d.date !== undefined) owned.date = d.date;
+        if (d.note !== undefined) owned.note = d.note ?? "";
         owned.fromAccountId = fromAccountId;
         owned.toAccountId = toAccountId;
         owned.categoryId = categoryId;
-        owned.excludeFromBudget = d.excludeFromBudget ?? false;
+        if (d.excludeFromBudget !== undefined) owned.excludeFromBudget = d.excludeFromBudget ?? false;
 
         await owned.save({ session });
         transaction = owned;

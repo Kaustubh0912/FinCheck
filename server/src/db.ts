@@ -25,6 +25,7 @@ const userSchema = new Schema(
     passwordHash: { type: String, required: true },
     currency: { type: String, default: "INR" },
     monthlyBudget: { type: Number, default: null }, // minor units
+    tokenVersion: { type: Number, default: 0 },
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "User" }
 );

@@ -36,7 +36,10 @@ export function formatDayHeading(iso: string): string {
 
 /** Group a key by yyyy-mm-dd for date headings. */
 export function dayKey(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10);
+  const d = new Date(iso);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${d.getFullYear()}-${m < 10 ? '0' + m : m}-${day < 10 ? '0' + day : day}`;
 }
 
 export function monthRange(date = new Date()): { from: string; to: string } {

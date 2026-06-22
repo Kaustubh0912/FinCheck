@@ -1,14 +1,18 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useSummary } from "../api/hooks";
-import { formatMoney, monthRange } from "../lib/format";
+import { formatMoney, monthRange, currencySymbol, monthLabel } from "../lib/format";
+import { Icon } from "../lib/icons";
 import { BudgetWidget } from "../components/BudgetWidget";
 
 export function Budget() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
-  const [monthDate] = useState(new Date());
+  const [monthDate, setMonthDate] = useState(new Date());
   const range = useMemo(() => monthRange(monthDate), [monthDate]);
+
+  const shiftMonth = (delta: number) =>
+    setMonthDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
   
   const { data: summary } = useSummary(range);
   
@@ -146,11 +150,23 @@ export function Budget() {
 
   return (
     <div className="page budget">
-      <header className="page-head">
+      <header className="page-head" style={{ marginBottom: 16 }}>
         <div>
           <h1>Budget</h1>
         </div>
       </header>
+
+      <div className="month-switch-wrap" style={{ marginBottom: 24 }}>
+        <div className="month-switch">
+          <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+            <Icon name="chevron-left" />
+          </button>
+          <span>{monthLabel(monthDate)}</span>
+          <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
+            <Icon name="chevron-right" />
+          </button>
+        </div>
+      </div>
 
       <BudgetWidget 
         expense={expense} 
@@ -161,7 +177,7 @@ export function Budget() {
       <section className="card">
         <h2 className="card-title">Can I afford this?</h2>
         <div className="amount-field small">
-          <span className="amount-symbol">₹</span>
+          <span className="amount-symbol">{currencySymbol(currency)}</span>
           <input
             type="number"
             inputMode="decimal"
