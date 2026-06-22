@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { SmartDateInput } from "./SmartDateInput";
 import { Icon } from "../lib/icons";
@@ -260,100 +260,104 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         />
       </label>
 
-      {type === "split" && (
-        <>
-          <div className="split-mode-toggle">
-            <button
-              className={splitMode === "equal" ? "active" : ""}
-              onClick={() => setSplitMode("equal")}
-            >
-              Split equally
-            </button>
-            <button
-              className={splitMode === "unequal" ? "active" : ""}
-              onClick={() => setSplitMode("unequal")}
-            >
-              Split unequally
-            </button>
-          </div>
-
-          {splitMode === "equal" ? (
-            <div className="field">
-              <label className="field-label">Number of people (including you)</label>
-              <div className="people-stepper">
-                <button
-                  onClick={() => setNumPeople((n) => Math.max(2, n - 1))}
-                  disabled={numPeople <= 2}
-                  style={numPeople <= 2 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
-                >
-                  <Icon name="minus" />
-                </button>
-                <span className="count">{numPeople}</span>
-                <button onClick={() => setNumPeople((n) => n + 1)}>
-                  <Icon name="plus" />
-                </button>
-              </div>
-              {amount && Number(amount) > 0 && (
-                <div className="share-preview">
-                  Your share: {symbol}{(Number(amount) / numPeople).toFixed(2)}
-                </div>
-              )}
+      <MorphWrapper dependencyKey={type}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {type === "split" && (
+          <>
+            <div className="split-mode-toggle">
+              <button
+                className={splitMode === "equal" ? "active" : ""}
+                onClick={() => setSplitMode("equal")}
+              >
+                Split equally
+              </button>
+              <button
+                className={splitMode === "unequal" ? "active" : ""}
+                onClick={() => setSplitMode("unequal")}
+              >
+                Split unequally
+              </button>
             </div>
-          ) : (
-            <label className="amount-field small" style={{ marginTop: -10 }}>
-              <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
-              <span className="amount-symbol">{symbol}</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0"
-                value={myShare}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9.]/g, "");
-                  const parts = val.split(".");
-                  setMyShare(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
-                }}
-              />
-            </label>
-          )}
-        </>
-      )}
 
-      {liveAccounts.length === 0 ? (
-        <p className="muted center">Add an account first (Accounts tab) so transactions have somewhere to go.</p>
-      ) : (
-        <>
-          {type === "transfer" ? (
-            <div className="transfer-row">
-              <AccountPicker label="From" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
-              <Icon name="arrow-right" className="transfer-arrow" />
-              <AccountPicker label="To" accounts={liveAccounts} value={toAccountId} onChange={setToAccountId} />
-            </div>
-          ) : type === "income" ? (
-            <AccountPicker label="Deposit to" accounts={liveAccounts} value={toAccountId} onChange={setToAccountId} />
-          ) : (
-            <AccountPicker label="Paid from" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
-          )}
-
-          {type !== "transfer" && (
-            <div className="field">
-              <label className="field-label">Category</label>
-              <div className="chip-grid">
-                {catsForType.map((c) => (
+            {splitMode === "equal" ? (
+              <div className="field">
+                <label className="field-label">Number of people (including you)</label>
+                <div className="people-stepper">
                   <button
-                    key={c.id}
-                    className={`chip ${categoryId === c.id ? "chip-active" : ""}`}
-                    style={categoryId === c.id ? { borderColor: resolveThemeColor(c.color), color: resolveThemeColor(c.color) } : undefined}
-                    onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)}
+                    onClick={() => setNumPeople((n) => Math.max(2, n - 1))}
+                    disabled={numPeople <= 2}
+                    style={numPeople <= 2 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                   >
-                    <Icon name={c.icon} /> {c.name}
+                    <Icon name="minus" />
                   </button>
-                ))}
+                  <span className="count">{numPeople}</span>
+                  <button onClick={() => setNumPeople((n) => n + 1)}>
+                    <Icon name="plus" />
+                  </button>
+                </div>
+                {amount && Number(amount) > 0 && (
+                  <div className="share-preview">
+                    Your share: {symbol}{(Number(amount) / numPeople).toFixed(2)}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </>
-      )}
+            ) : (
+              <label className="amount-field small" style={{ marginTop: -10 }}>
+                <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
+                <span className="amount-symbol">{symbol}</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={myShare}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9.]/g, "");
+                    const parts = val.split(".");
+                    setMyShare(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+                  }}
+                />
+              </label>
+            )}
+          </>
+        )}
+
+        {liveAccounts.length === 0 ? (
+          <p className="muted center">Add an account first (Accounts tab) so transactions have somewhere to go.</p>
+        ) : (
+          <>
+            {type === "transfer" ? (
+              <div className="transfer-row">
+                <AccountPicker label="From" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
+                <Icon name="arrow-right" className="transfer-arrow" />
+                <AccountPicker label="To" accounts={liveAccounts} value={toAccountId} onChange={setToAccountId} />
+              </div>
+            ) : type === "income" ? (
+              <AccountPicker label="Deposit to" accounts={liveAccounts} value={toAccountId} onChange={setToAccountId} />
+            ) : (
+              <AccountPicker label="Paid from" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
+            )}
+
+            {type !== "transfer" && (
+              <div className="field">
+                <label className="field-label">Category</label>
+                <div className="chip-grid">
+                  {catsForType.map((c) => (
+                    <button
+                      key={c.id}
+                      className={`chip ${categoryId === c.id ? "chip-active" : ""}`}
+                      style={categoryId === c.id ? { borderColor: resolveThemeColor(c.color), color: resolveThemeColor(c.color) } : undefined}
+                      onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)}
+                    >
+                      <Icon name={c.icon} /> {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        </div>
+      </MorphWrapper>
 
       <SmartDateInput value={date} onChange={setDate} />
 
@@ -412,6 +416,101 @@ function AccountPicker({
             <Icon name={a.icon} /> {a.name}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function MorphWrapper({ children, dependencyKey }: { children: React.ReactNode; dependencyKey: string }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  
+  const [state, setState] = useState<{
+    currentKey: string;
+    phase: "entering" | "visible";
+    exitingSlots: { key: string; content: React.ReactNode }[];
+  }>({
+    currentKey: dependencyKey,
+    phase: "visible",
+    exitingSlots: []
+  });
+
+  const prevChildren = useRef(children);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  if (dependencyKey !== state.currentKey) {
+    setState(prev => ({
+      currentKey: dependencyKey,
+      phase: "entering",
+      exitingSlots: [...prev.exitingSlots, { key: prev.currentKey + "_" + Date.now(), content: prevChildren.current }]
+    }));
+  }
+
+  prevChildren.current = children;
+
+  useLayoutEffect(() => {
+    if (state.phase !== "entering") return;
+    
+    const el = outerRef.current;
+    if (!el) return;
+
+    const enteringEl = el.querySelector<HTMLElement>(`[data-key='${state.currentKey}']`);
+    if (!enteringEl) return;
+
+    const oldH = el.getBoundingClientRect().height;
+    
+    enteringEl.style.position = "relative";
+    el.style.height = "auto";
+    const newH = enteringEl.getBoundingClientRect().height;
+    enteringEl.style.position = "absolute";
+    
+    el.style.height = `${oldH}px`;
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    el.offsetHeight; 
+
+    el.style.height = `${newH}px`;
+
+    requestAnimationFrame(() => {
+      setState(prev => prev.currentKey === dependencyKey ? { ...prev, phase: "visible" } : prev);
+    });
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setState(prev => prev.currentKey === dependencyKey ? { ...prev, exitingSlots: [] } : prev);
+      if (outerRef.current) outerRef.current.style.height = "auto";
+    }, 350);
+
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, [state.currentKey, state.phase, dependencyKey]);
+
+  return (
+    <div ref={outerRef} style={{ position: "relative", overflow: "hidden", transition: "height 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>
+      {state.exitingSlots.map(slot => (
+        <div
+          key={slot.key}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, width: "100%",
+            opacity: 0,
+            transform: "translateY(-5px)",
+            transition: "opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+            pointerEvents: "none",
+          }}
+        >
+          {slot.content}
+        </div>
+      ))}
+      <div
+        data-key={state.currentKey}
+        style={{
+          position: state.phase === "visible" ? "relative" : "absolute",
+          top: 0, left: 0, width: "100%",
+          opacity: state.phase === "visible" ? 1 : 0,
+          transform: state.phase === "entering" ? "translateY(6px)" : "none",
+          transition: "opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
+          pointerEvents: state.phase === "visible" ? "auto" : "none",
+        }}
+      >
+        {children}
       </div>
     </div>
   );
