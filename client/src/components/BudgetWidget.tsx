@@ -77,11 +77,11 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
       <div className="budget-meta" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line-light)' }}>
         {isOverPace ? (
           <span className="amt-expense">
-            At this rate you'll overspend by {formatMoney((expense / daysElapsed) * totalDays - monthlyBudget, currency)} this month
+            At this rate you&apos;ll overspend by {formatMoney((expense / daysElapsed) * totalDays - monthlyBudget, currency)} this month
           </span>
         ) : (
           <span className="muted">
-            You're {formatMoney(paceDiff, currency)} under pace
+            You&apos;re {formatMoney(paceDiff, currency)} under pace
           </span>
         )}
       </div>

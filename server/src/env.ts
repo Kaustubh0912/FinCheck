@@ -12,6 +12,6 @@ export const env = {
 };
 
 if (env.jwtSecret === "dev-secret-change-me" && env.nodeEnv === "production") {
-  // eslint-disable-next-line no-console
+   
   console.warn("[fincheck] WARNING: using the default JWT secret in production!");
 }

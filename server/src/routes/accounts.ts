@@ -12,7 +12,7 @@ accountsRouter.use(requireAuth);
 accountsRouter.get("/", async (req: AuthedRequest, res) => {
   try {
     res.json(await accountsWithBalances(req.userId!));
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch accounts" });
   }
 });
@@ -33,7 +33,7 @@ accountsRouter.post("/", async (req: AuthedRequest, res) => {
     });
     // Mongoose doc spreading requires toJSON() or toObject()
     res.status(201).json({ ...account.toJSON(), balance: account.openingBalance });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to create account" });
   }
 });
@@ -61,7 +61,7 @@ accountsRouter.patch("/reorder", async (req: AuthedRequest, res) => {
     );
     
     res.status(200).json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to reorder accounts" });
   }
 });
@@ -90,7 +90,7 @@ accountsRouter.patch("/:id", async (req: AuthedRequest, res) => {
     });
     const balances = await accountsWithBalances(req.userId!);
     res.json(balances.find((a) => a.id === req.params.id));
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update account" });
   }
 });
@@ -118,7 +118,7 @@ accountsRouter.delete("/:id", async (req: AuthedRequest, res) => {
     }
     await Account.findByIdAndDelete(req.params.id);
     res.status(204).end();
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to delete account" });
   }
 });

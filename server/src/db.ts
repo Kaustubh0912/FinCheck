@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { env } from "./env";
 
 export async function connectDb() {
@@ -10,7 +10,7 @@ export async function connectDb() {
 // Ensure virtuals (like id) are included in JSON and objects
 const toJSON = {
   virtuals: true,
-  transform: (doc: any, ret: any) => {
+  transform: (doc: mongoose.Document, ret: Record<string, unknown>) => {
     delete ret._id;
     delete ret.__v;
     return ret;

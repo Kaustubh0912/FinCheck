@@ -15,11 +15,21 @@
     "build": "npm run build -w server && npm run build -w client",
     "start": "node scripts/start.mjs",
     "clean": "node scripts/clean.mjs",
-    "typecheck": "npm run typecheck -w client && tsc -p server/tsconfig.json --noEmit"
+    "typecheck": "npm run typecheck -w client && tsc -p server/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.62.0",
+    "@typescript-eslint/parser": "^8.62.0",
     "concurrently": "^9.1.0",
-    "sharp": "^0.35.2"
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^15.15.0",
+    "sharp": "^0.35.2",
+    "typescript-eslint": "^8.62.0"
   },
   "engines": {
     "node": ">=20"

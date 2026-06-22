@@ -29,7 +29,7 @@ async function assertOwnership(
 transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
     const { from, to, accountId, type, categoryId, limit, skip } = req.query as Record<string, string>;
-    const where: any = { userId: req.userId };
+    const where: Record<string, unknown> = { userId: req.userId };
     if (type && ["income", "expense", "transfer", "saving", "reimbursement"].includes(type)) where.type = type;
     if (categoryId) {
       if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -86,7 +86,7 @@ transactionsRouter.post("/", async (req: AuthedRequest, res, next) => {
     const categoryId = ["income", "expense"].includes(d.type) ? (d.categoryId ?? null) : null;
 
     const session = await mongoose.startSession();
-    let transaction: any = null;
+    let transaction: mongoose.Document | null = null;
 
     try {
       await session.withTransaction(async () => {
@@ -126,9 +126,9 @@ transactionsRouter.post("/", async (req: AuthedRequest, res, next) => {
       .populate("category", "id name icon color kind");
 
     res.status(201).json(populated);
-  } catch (err: any) {
-    if (err.message?.startsWith("400:")) {
-      res.status(400).json({ error: err.message.substring(4) });
+  } catch (err: unknown) {
+    if ((err as Error).message?.startsWith("400:")) {
+      res.status(400).json({ error: (err as Error).message.substring(4) });
     } else {
       next(err);
     }
@@ -148,7 +148,7 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
     const d = parsed.data;
 
     const session = await mongoose.startSession();
-    let transaction: any = null;
+    let transaction: mongoose.Document | null = null;
 
     try {
       await session.withTransaction(async () => {
@@ -218,11 +218,11 @@ transactionsRouter.patch("/:id", async (req: AuthedRequest, res, next) => {
       .populate("category", "id name icon color kind");
 
     res.json(populated);
-  } catch (err: any) {
-    if (err.message?.startsWith("400:")) {
-      res.status(400).json({ error: err.message.substring(4) });
-    } else if (err.message?.startsWith("404:")) {
-      res.status(404).json({ error: err.message.substring(4) });
+  } catch (err: unknown) {
+    if ((err as Error).message?.startsWith("400:")) {
+      res.status(400).json({ error: (err as Error).message.substring(4) });
+    } else if ((err as Error).message?.startsWith("404:")) {
+      res.status(404).json({ error: (err as Error).message.substring(4) });
     } else {
       next(err);
     }
@@ -251,9 +251,9 @@ transactionsRouter.delete("/:id", async (req: AuthedRequest, res, next) => {
     }
 
     res.status(204).end();
-  } catch (err: any) {
-    if (err.message?.startsWith("404:")) {
-      res.status(404).json({ error: err.message.substring(4) });
+  } catch (err: unknown) {
+    if ((err as Error).message?.startsWith("404:")) {
+      res.status(404).json({ error: (err as Error).message.substring(4) });
     } else {
       next(err);
     }

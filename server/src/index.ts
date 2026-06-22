@@ -60,22 +60,22 @@ const clientDist = path.resolve(__dirname, "../../client/dist");
 if (fs.existsSync(clientDist)) {
   app.use(express.static(clientDist));
   app.get("*", (_req, res) => res.sendFile(path.join(clientDist, "index.html")));
-  // eslint-disable-next-line no-console
+   
   console.log(`[fincheck] serving client build from ${clientDist}`);
 }
 
 // Fallback error handler.
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  // eslint-disable-next-line no-console
+   
   console.error("[fincheck] unhandled error:", err);
   res.status(500).json({ error: "Something went wrong on the server." });
 });
 
-let server: any;
+let server: ReturnType<typeof app.listen>;
 
 connectDb().then(() => {
   server = app.listen(env.port, () => {
-    // eslint-disable-next-line no-console
+     
     console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
   });
 });

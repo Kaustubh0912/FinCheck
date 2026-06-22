@@ -136,7 +136,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         },
         {
           onSuccess: () => setSuccess(true),
-          onError: (e: any) => setError(errMessage(e)),
+          onError: (e: unknown) => setError(errMessage(e)),
         }
       );
       return;
@@ -377,7 +377,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           <span>
             Exclude from budget
             <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2, fontWeight: "normal" }}>
-              Don't count this against daily/monthly allowance
+              Don&apos;t count this against daily/monthly allowance
             </div>
           </span>
           <input

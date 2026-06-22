@@ -37,6 +37,7 @@ const ICONS: Record<string, IconDefinition> = {
   search: faMagnifyingGlass, lock: faLock, "grip-vertical": faGripVertical, minus: faMinus,
   "circle-check": faCircleCheck, "circle-xmark": faCircleXmark,
 };
+/* eslint-disable react-refresh/only-export-components */
 
 /** Maps legacy emoji values (older DB rows) to the new icon slugs. */
 const EMOJI_TO_KEY: Record<string, string> = {

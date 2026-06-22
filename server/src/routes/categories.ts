@@ -11,7 +11,7 @@ categoriesRouter.get("/", async (req: AuthedRequest, res) => {
   try {
     const categories = await Category.find({ userId: req.userId }).sort({ kind: 1, name: 1 });
     res.json(categories);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch categories" });
   }
 });
@@ -25,7 +25,7 @@ categoriesRouter.post("/", async (req: AuthedRequest, res) => {
     }
     const category = await Category.create({ ...parsed.data, userId: req.userId });
     res.status(201).json(category);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to create category" });
   }
 });
@@ -48,7 +48,7 @@ categoriesRouter.patch("/:id", async (req: AuthedRequest, res) => {
     }
     const category = await Category.findByIdAndUpdate(req.params.id, parsed.data, { returnDocument: "after" });
     res.json(category);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to update category" });
   }
 });
@@ -68,7 +68,7 @@ categoriesRouter.delete("/:id", async (req: AuthedRequest, res) => {
     await Transaction.updateMany({ categoryId: req.params.id, userId: req.userId }, { $set: { categoryId: null } });
     await Category.findByIdAndDelete(req.params.id);
     res.status(204).end();
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to delete category" });
   }
 });

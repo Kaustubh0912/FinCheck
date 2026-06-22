@@ -142,7 +142,7 @@ export function useDeleteTransaction() {
 
 // ---- Summary ----
 export function useSummary(range?: { from: string; to: string }) {
-  const params: any = { ...range };
+  const params: Record<string, unknown> = { ...range };
   
   // Pass the client's local midnight to the server for accurate todayExpense calculation
   const now = new Date();

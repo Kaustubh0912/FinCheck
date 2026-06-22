@@ -21,8 +21,8 @@ export async function hasSufficientBalance(
 ): Promise<boolean> {
   const accountObjectId = new mongoose.Types.ObjectId(accountId);
 
-  let inflowMatch: any = { toAccountId: accountObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] } };
-  let outflowMatch: any = { fromAccountId: accountObjectId, type: { $in: ["expense", "transfer", "saving"] } };
+  const inflowMatch: mongoose.FilterQuery<typeof Transaction> = { toAccountId: accountObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] } };
+  const outflowMatch: mongoose.FilterQuery<typeof Transaction> = { fromAccountId: accountObjectId, type: { $in: ["expense", "transfer", "saving"] } };
 
   if (excludeTransactionId) {
     const excludeId = new mongoose.Types.ObjectId(excludeTransactionId);

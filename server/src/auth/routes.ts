@@ -82,7 +82,7 @@ authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res: Response, n
     }
     const { name, currency, monthlyBudget } = parsed.data;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (typeof name === "string" && name.trim()) updateData.name = name.trim();
     if (typeof currency === "string" && currency.length === 3) updateData.currency = currency;
     if (monthlyBudget !== undefined) {
@@ -94,7 +94,7 @@ authRouter.patch("/me", requireAuth, async (req: AuthedRequest, res: Response, n
       updateData,
       { returnDocument: "after" }
     );
-    res.json({ user: publicUser(user as any) });
+    res.json({ user: publicUser(user as Parameters<typeof publicUser>[0]) });
   } catch (err) {
     next(err);
   }

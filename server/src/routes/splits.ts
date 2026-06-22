@@ -10,7 +10,7 @@ splitsRouter.use(requireAuth);
 
 splitsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
-    const query: any = { userId: req.userId };
+    const query: Record<string, unknown> = { userId: req.userId };
     if (req.query.settled === "true") query.settled = true;
     if (req.query.settled === "false") query.settled = false;
     if (req.query.from || req.query.to) {
@@ -48,7 +48,7 @@ splitsRouter.post("/", async (req: AuthedRequest, res, next) => {
     }
 
     const session = await mongoose.startSession();
-    let split: any = null;
+    let split: mongoose.Document | null = null;
 
     try {
       await session.withTransaction(async () => {
@@ -102,9 +102,9 @@ splitsRouter.post("/", async (req: AuthedRequest, res, next) => {
     }
 
     res.status(201).json(split);
-  } catch (err: any) {
-    if (err.message?.startsWith("400:")) {
-      res.status(400).json({ error: err.message.substring(4) });
+  } catch (err: unknown) {
+    if ((err as Error).message?.startsWith("400:")) {
+      res.status(400).json({ error: (err as Error).message.substring(4) });
     } else {
       next(err);
     }
@@ -126,7 +126,7 @@ splitsRouter.post("/:id/repay", async (req: AuthedRequest, res, next) => {
     const minorAmount = toMinor(amount);
 
     const session = await mongoose.startSession();
-    let splitResult: any = null;
+    let splitResult: mongoose.Document | null = null;
 
     try {
       await session.withTransaction(async () => {
@@ -174,11 +174,11 @@ splitsRouter.post("/:id/repay", async (req: AuthedRequest, res, next) => {
     }
 
     res.json(splitResult);
-  } catch (err: any) {
-    if (err.message?.startsWith("400:")) {
-      res.status(400).json({ error: err.message.substring(4) });
-    } else if (err.message?.startsWith("404:")) {
-      res.status(404).json({ error: err.message.substring(4) });
+  } catch (err: unknown) {
+    if ((err as Error).message?.startsWith("400:")) {
+      res.status(400).json({ error: (err as Error).message.substring(4) });
+    } else if ((err as Error).message?.startsWith("404:")) {
+      res.status(404).json({ error: (err as Error).message.substring(4) });
     } else {
       next(err);
     }
