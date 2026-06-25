@@ -259,6 +259,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
           inputMode="decimal"
           placeholder="0"
           value={amount}
+          size={amount.length || 1}
           autoFocus
           onChange={(e) => {
             const val = e.target.value.replace(/[^0-9.]/g, "");

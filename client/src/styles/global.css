@@ -768,23 +768,28 @@ a { color: inherit; text-decoration: none; }
 }
 .txn-type-btn {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 6px;
+  padding: 10px 4px;
   border: none;
   border-radius: 9px;
   background: transparent;
   color: var(--muted);
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: clamp(0.7rem, 2.8vw, 0.82rem);
   transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
-.txn-type-btn svg { font-size: 1.15em; }
-.txn-type-btn span { display: none; }
-@media (min-width: 380px) {
-  .txn-type-btn span { display: inline; }
+.txn-type-btn svg {
+  flex-shrink: 0;
+  font-size: 1.15em;
+}
+.txn-type-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .txn-type-btn.active {
   background: var(--surface);
@@ -818,11 +823,11 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink);
   font-family: var(--serif);
   font-feature-settings: "tnum" 1;
-  font-size: 3.2rem;
+  font-size: clamp(2.4rem, 10vw, 3.2rem);
   font-weight: 500;
   letter-spacing: -0.025em;
-  width: 100%;
-  max-width: 240px;
+  max-width: 100%;
+  min-width: 1ch;
   text-align: center;
   caret-color: var(--accent);
 }
