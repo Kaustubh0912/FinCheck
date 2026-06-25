@@ -13,6 +13,7 @@ import {
   faBoxArchive, faRightFromBracket, faMoon, faSun, faDownload, faPencil,
   faChevronLeft, faChevronRight, faChevronDown, faCheck, faArrowTrendUp, faArrowTrendDown, faIndianRupeeSign,
   faMagnifyingGlass, faLock, faGripVertical, faMinus, faCircleCheck, faCircleXmark,
+  faArrowUp, faArrowDown, faScissors, faEquals, faSliders,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Every icon the app can render, keyed by a short stable slug. */
@@ -36,6 +37,8 @@ const ICONS: Record<string, IconDefinition> = {
   "trend-up": faArrowTrendUp, "trend-down": faArrowTrendDown, rupee: faIndianRupeeSign,
   search: faMagnifyingGlass, lock: faLock, "grip-vertical": faGripVertical, minus: faMinus,
   "circle-check": faCircleCheck, "circle-xmark": faCircleXmark,
+  "arrow-up": faArrowUp, "arrow-down": faArrowDown, "arrow-right-arrow-left": faArrowRightArrowLeft,
+  scissors: faScissors, equals: faEquals, sliders: faSliders,
 };
 /* eslint-disable react-refresh/only-export-components */
 

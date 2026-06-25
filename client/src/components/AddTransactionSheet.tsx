@@ -15,11 +15,11 @@ interface Props {
   editing?: Transaction;
 }
 
-const TYPES: { key: TxnType | "split"; label: string }[] = [
-  { key: "expense", label: "Expense" },
-  { key: "income", label: "Income" },
-  { key: "transfer", label: "Transfer" },
-  { key: "split", label: "Split" },
+const TYPES: { key: TxnType | "split"; label: string; icon: string }[] = [
+  { key: "expense", label: "Expense", icon: "arrow-up" },
+  { key: "income", label: "Income", icon: "arrow-down" },
+  { key: "transfer", label: "Transfer", icon: "arrow-right-arrow-left" },
+  { key: "split", label: "Split", icon: "scissors" },
 ];
 
 function todayInput(d?: string) {
@@ -182,28 +182,28 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
 
   const accentClass = `accent-${type}`;
 
+  /* ── Feedback screen (success / error) ── */
   if (success || error) {
     return (
       <Sheet open={open} onClose={onClose} title={editing ? "Edit transaction" : "New transaction"}>
-        <div className="feedback-screen animate-pop" style={{ display: "flex", flexDirection: "column", minHeight: "50vh", justifyContent: "center", alignItems: "center" }}>
-          <div style={{ color: success ? "var(--income)" : "var(--expense)", fontSize: 80, textAlign: "center", marginBottom: 24 }}>
+        <div className="txn-feedback">
+          <div className={`txn-feedback-icon ${success ? "is-success" : "is-error"}`}>
             <Icon name={success ? "circle-check" : "circle-xmark"} />
           </div>
-          <h2 style={{ textAlign: "center", marginBottom: 8 }}>
+          <h2 className="txn-feedback-title">
             {success ? (editing ? "Changes saved" : "Transaction added") : "Issue detected"}
           </h2>
-          <p className="muted" style={{ textAlign: "center", marginBottom: 32, fontSize: "1.05rem" }}>
+          <p className="txn-feedback-msg">
             {success ? "Your transaction has been successfully recorded." : error}
           </p>
-          <div className="row gap" style={{ justifyContent: "center" }}>
-            {success && !editing ? (
-              <button className="btn btn-ghost muted" style={{ opacity: 0.8 }} onClick={() => { setSuccess(false); setAmount(""); setNote(""); }}>
+          <div className="txn-feedback-actions">
+            {success && !editing && (
+              <button className="btn btn-ghost" onClick={() => { setSuccess(false); setAmount(""); setNote(""); }}>
                 Add another
               </button>
-            ) : null}
-            <button 
-              className="btn btn-ghost muted" 
-              style={{ opacity: 0.8 }}
+            )}
+            <button
+              className="btn btn-ghost"
               onClick={success ? onClose : () => setError("")}
             >
               {success ? "Done" : "Try again"}
@@ -214,13 +214,14 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     );
   }
 
+  /* ── Main form ── */
   return (
     <Sheet
       open={open}
       onClose={onClose}
       title={editing ? "Edit transaction" : "New transaction"}
       footer={
-        <div className="row gap">
+        <div className="txn-footer">
           {editing && (
             <button className="btn btn-ghost-danger" onClick={remove} disabled={deleteTxn.isPending}>
               <Icon name="trash" /> Delete
@@ -232,24 +233,28 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         </div>
       }
     >
-      <div className={`type-toggle ${accentClass}`}>
+      {/* Type selector */}
+      <div className={`txn-type-bar ${accentClass}`}>
         {TYPES.map((t) => (
           <button
             key={t.key}
-            className={type === t.key ? "active" : ""}
+            className={`txn-type-btn ${type === t.key ? "active" : ""}`}
             onClick={() => {
               setType(t.key);
               setCategoryId("");
             }}
           >
-            {t.label}
+            <Icon name={t.icon} />
+            <span>{t.label}</span>
           </button>
         ))}
       </div>
 
-      <label className="amount-field">
-        <span className="amount-symbol">{symbol}</span>
+      {/* Amount input */}
+      <div className="txn-amount-block">
+        <span className="txn-amount-currency">{symbol}</span>
         <input
+          className="txn-amount-input"
           type="text"
           inputMode="decimal"
           placeholder="0"
@@ -261,77 +266,83 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
             setAmount(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
           }}
         />
-      </label>
+      </div>
 
-      <MorphWrapper dependencyKey={type === "split" ? `${type}-${splitMode}` : type}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Dynamic fields — wrapped for smooth height + fade animation */}
+      <AnimatedContent depKey={type === "split" ? `${type}-${splitMode}` : type}>
+        {/* Split options */}
         {type === "split" && (
-          <>
-            <div className="split-mode-toggle">
+          <div className="txn-section">
+            <div className="txn-split-toggle">
               <button
                 className={splitMode === "equal" ? "active" : ""}
                 onClick={() => setSplitMode("equal")}
               >
-                Split equally
+                <Icon name="equals" /> Equal
               </button>
               <button
                 className={splitMode === "unequal" ? "active" : ""}
                 onClick={() => setSplitMode("unequal")}
               >
-                Split unequally
+                <Icon name="sliders" /> Unequal
               </button>
             </div>
 
             {splitMode === "equal" ? (
-              <div className="field">
+              <div className="txn-stepper-field">
                 <label className="field-label">Number of people (including you)</label>
-                <div className="people-stepper">
+                <div className="txn-stepper">
                   <button
+                    className="txn-stepper-btn"
                     onClick={() => setNumPeople((n) => Math.max(2, n - 1))}
                     disabled={numPeople <= 2}
-                    style={numPeople <= 2 ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                   >
                     <Icon name="minus" />
                   </button>
-                  <span className="count">{numPeople}</span>
-                  <button onClick={() => setNumPeople((n) => n + 1)}>
+                  <span className="txn-stepper-count">{numPeople}</span>
+                  <button className="txn-stepper-btn" onClick={() => setNumPeople((n) => n + 1)}>
                     <Icon name="plus" />
                   </button>
                 </div>
                 {amount && Number(amount) > 0 && (
-                  <div className="share-preview">
+                  <div className="txn-share-badge">
                     Your share: {symbol}{(Number(amount) / numPeople).toFixed(2)}
                   </div>
                 )}
               </div>
             ) : (
-              <label className="amount-field small" style={{ marginTop: -10 }}>
-                <span className="muted" style={{ fontSize: "0.85rem", marginRight: 8, width: 70 }}>My share</span>
-                <span className="amount-symbol">{symbol}</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={myShare}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, "");
-                    const parts = val.split(".");
-                    setMyShare(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
-                  }}
-                />
-              </label>
+              <div className="txn-my-share">
+                <label className="field-label">My share</label>
+                <div className="txn-share-input-row">
+                  <span className="txn-share-symbol">{symbol}</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={myShare}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9.]/g, "");
+                      const parts = val.split(".");
+                      setMyShare(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
+                    }}
+                  />
+                </div>
+              </div>
             )}
-          </>
+          </div>
         )}
 
+        {/* Account picker(s) */}
         {liveAccounts.length === 0 ? (
-          <p className="muted center">Add an account first (Accounts tab) so transactions have somewhere to go.</p>
+          <p className="txn-empty-hint">Add an account first (Accounts tab) so transactions have somewhere to go.</p>
         ) : (
           <>
             {type === "transfer" ? (
-              <div className="transfer-row">
+              <div className="txn-transfer-row">
                 <AccountPicker label="From" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
-                <Icon name="arrow-right" className="transfer-arrow" />
+                <div className="txn-transfer-arrow">
+                  <Icon name="arrow-right" />
+                </div>
                 <AccountPicker label="To" accounts={liveAccounts} value={toAccountId} onChange={setToAccountId} />
               </div>
             ) : type === "income" ? (
@@ -340,10 +351,10 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
               <AccountPicker label="Paid from" accounts={liveAccounts} value={fromAccountId} onChange={setFromAccountId} />
             )}
 
-            {type !== "transfer" && (
+            {type !== "transfer" && catsForType.length > 0 && (
               <div className="field">
                 <label className="field-label">Category</label>
-                <div className="chip-grid">
+                <div className="txn-chip-grid">
                   {catsForType.map((c) => (
                     <button
                       key={c.id}
@@ -359,11 +370,12 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
             )}
           </>
         )}
-        </div>
-      </MorphWrapper>
+      </AnimatedContent>
 
+      {/* Date */}
       <SmartDateInput value={date} onChange={setDate} />
 
+      {/* Note */}
       <div className="field">
         <label className="field-label">Note</label>
         <input
@@ -375,14 +387,13 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         />
       </div>
 
+      {/* Exclude from budget toggle */}
       {(type === "expense" || type === "saving" || type === "split") && (
-        <label className="toggle-row" style={{ marginTop: 16 }}>
-          <span>
-            Exclude from budget
-            <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2, fontWeight: "normal" }}>
-              Don&apos;t count this against daily/monthly allowance
-            </div>
-          </span>
+        <label className="txn-toggle">
+          <div className="txn-toggle-text">
+            <span>Exclude from budget</span>
+            <span className="txn-toggle-hint">Don&apos;t count this against daily/monthly allowance</span>
+          </div>
           <input
             type="checkbox"
             checked={excludeFromBudget}
@@ -391,6 +402,42 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         </label>
       )}
     </Sheet>
+  );
+}
+
+/**
+ * Smoothly animates height changes and fades content in when `depKey` changes.
+ * Uses ResizeObserver for rock-solid height tracking, preventing clipping bugs.
+ */
+function AnimatedContent({ children, depKey }: { children: React.ReactNode; depKey: string }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+
+    const obs = new ResizeObserver(() => {
+      outer.style.height = `${inner.offsetHeight}px`;
+    });
+    
+    obs.observe(inner);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={outerRef}
+      className="txn-animated-outer"
+      style={{ transition: "height 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      <div ref={innerRef} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div key={depKey} className="txn-animated-inner">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -408,7 +455,7 @@ function AccountPicker({
   return (
     <div className="field">
       <label className="field-label">{label}</label>
-      <div className="chip-row">
+      <div className="txn-chip-scroll">
         {accounts.map((a) => (
           <button
             key={a.id}
@@ -419,102 +466,6 @@ function AccountPicker({
             <Icon name={a.icon} /> {a.name}
           </button>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function MorphWrapper({ children, dependencyKey }: { children: React.ReactNode; dependencyKey: string }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  
-  const [state, setState] = useState<{
-    currentKey: string;
-    phase: "entering" | "visible";
-    exitingSlots: { key: string; content: React.ReactNode }[];
-  }>({
-    currentKey: dependencyKey,
-    phase: "visible",
-    exitingSlots: []
-  });
-
-  const prevChildren = useRef(children);
-
-  if (dependencyKey !== state.currentKey) {
-    setState(prev => ({
-      currentKey: dependencyKey,
-      phase: "entering",
-      exitingSlots: [...prev.exitingSlots, { key: prev.currentKey + "_" + Date.now(), content: prevChildren.current }]
-    }));
-  }
-
-  prevChildren.current = children;
-
-  useLayoutEffect(() => {
-    if (state.phase !== "entering") return;
-    
-    const el = outerRef.current;
-    if (!el) return;
-
-    const enteringEl = el.querySelector<HTMLElement>(`[data-key='${state.currentKey}']`);
-    if (!enteringEl) return;
-
-    const oldH = el.getBoundingClientRect().height;
-    
-    enteringEl.style.position = "relative";
-    el.style.height = "auto";
-    const newH = enteringEl.getBoundingClientRect().height;
-    enteringEl.style.position = "absolute";
-    
-    el.style.height = `${oldH}px`;
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    el.offsetHeight; 
-
-    el.style.height = `${newH}px`;
-
-    requestAnimationFrame(() => {
-      setState(prev => prev.currentKey === dependencyKey ? { ...prev, phase: "visible" } : prev);
-    });
-
-    const t = setTimeout(() => {
-      setState(prev => prev.currentKey === dependencyKey ? { ...prev, exitingSlots: [] } : prev);
-      if (outerRef.current) {
-        outerRef.current.style.height = "auto";
-        outerRef.current.style.removeProperty("height");
-      }
-    }, 350);
-
-    return () => clearTimeout(t);
-  }, [state.currentKey, dependencyKey]);
-
-  return (
-    <div ref={outerRef} style={{ position: "relative", overflow: "hidden", transition: "height 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>
-      {state.exitingSlots.map(slot => (
-        <div
-          key={slot.key}
-          style={{
-            position: "absolute",
-            top: 0, left: 0, width: "100%",
-            opacity: 0,
-            transform: "translateY(-5px)",
-            transition: "opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-            pointerEvents: "none",
-          }}
-        >
-          {slot.content}
-        </div>
-      ))}
-      <div
-        data-key={state.currentKey}
-        style={{
-          position: state.phase === "visible" ? "relative" : "absolute",
-          top: 0, left: 0, width: "100%",
-          opacity: state.phase === "visible" ? 1 : 0,
-          transform: state.phase === "entering" ? "translateY(6px)" : "none",
-          transition: "opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
-          pointerEvents: state.phase === "visible" ? "auto" : "none",
-        }}
-      >
-        {children}
       </div>
     </div>
   );
