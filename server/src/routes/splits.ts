@@ -69,14 +69,14 @@ splitsRouter.post("/", async (req: AuthedRequest, res, next) => {
         }
 
         // Sufficient balance check
-        const ok = await hasSufficientBalance(fromAccountId, toMinor(myShare), session);
+        const ok = await hasSufficientBalance(fromAccountId, toMinor(totalAmount), session);
         if (!ok) throw new Error("400:Insufficient balance in source account");
 
-        // Create the underlying expense transaction for "myShare"
+        // Create the underlying expense transaction for "totalAmount"
         const txnArr = await Transaction.create([{
           userId: req.userId,
           type: "expense",
-          amount: toMinor(myShare),
+          amount: toMinor(totalAmount),
           fromAccountId,
           categoryId: categoryId || null,
           note: note || "",

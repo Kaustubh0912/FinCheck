@@ -31,15 +31,21 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     ]),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: { $ne: true } } },
-      { $group: { _id: null, amount: { $sum: "$amount" } } },
+      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
+      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
+      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
     ]),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: { $gte: todayStart, $lt: todayEnd }, excludeFromBudget: { $ne: true } } },
-      { $group: { _id: null, amount: { $sum: "$amount" } } },
+      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
+      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
+      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
     ]),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: { $ne: true } } },
-      { $group: { _id: "$categoryId", amount: { $sum: "$amount" } } },
+      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
+      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
+      { $group: { _id: "$categoryId", amount: { $sum: "$effectiveAmount" } } },
     ]),
     Category.find({ userId }),
   ]);

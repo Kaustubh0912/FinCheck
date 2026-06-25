@@ -148,7 +148,10 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
 
     if (type !== "income") {
       const sourceAcc = liveAccounts.find((a) => a.id === fromAccountId);
-      if (sourceAcc && value * 100 > sourceAcc.balance) {
+      const effectiveBalance = sourceAcc
+        ? sourceAcc.balance + (editing && editing.fromAccountId === fromAccountId ? editing.amount : 0)
+        : 0;
+      if (sourceAcc && value * 100 > effectiveBalance) {
         return setError("Amount exceeds account balance.");
       }
     }
