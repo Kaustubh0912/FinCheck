@@ -263,7 +263,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         />
       </label>
 
-      <MorphWrapper dependencyKey={type}>
+      <MorphWrapper dependencyKey={type === "split" ? `${type}-${splitMode}` : type}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {type === "split" && (
           <>
@@ -438,7 +438,6 @@ function MorphWrapper({ children, dependencyKey }: { children: React.ReactNode; 
   });
 
   const prevChildren = useRef(children);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (dependencyKey !== state.currentKey) {
     setState(prev => ({
@@ -476,14 +475,16 @@ function MorphWrapper({ children, dependencyKey }: { children: React.ReactNode; 
       setState(prev => prev.currentKey === dependencyKey ? { ...prev, phase: "visible" } : prev);
     });
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
+    const t = setTimeout(() => {
       setState(prev => prev.currentKey === dependencyKey ? { ...prev, exitingSlots: [] } : prev);
-      if (outerRef.current) outerRef.current.style.height = "auto";
+      if (outerRef.current) {
+        outerRef.current.style.height = "auto";
+        outerRef.current.style.removeProperty("height");
+      }
     }, 350);
 
-    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [state.currentKey, state.phase, dependencyKey]);
+    return () => clearTimeout(t);
+  }, [state.currentKey, dependencyKey]);
 
   return (
     <div ref={outerRef} style={{ position: "relative", overflow: "hidden", transition: "height 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}>

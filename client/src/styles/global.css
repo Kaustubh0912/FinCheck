@@ -612,7 +612,8 @@ a { color: inherit; text-decoration: none; }
 .sheet-handle { width: 38px; height: 4px; border-radius: 999px; background: var(--line-strong); margin: 8px auto 12px; flex-shrink: 0; }
 .sheet-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; }
 .sheet-header h2 { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; }
-.sheet-body { overflow-y: auto; display: grid; gap: 16px; padding: 4px 2px; }
+.sheet-body { overflow-y: auto; display: grid; gap: 16px; padding: 4px 2px; scrollbar-width: none; -ms-overflow-style: none; }
+.sheet-body::-webkit-scrollbar { display: none; }
 .sheet-footer { padding-top: 16px; }
 
 /* ===== Motion ===== */
