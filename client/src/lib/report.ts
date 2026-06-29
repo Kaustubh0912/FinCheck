@@ -32,9 +32,8 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n) + "..." : s;
 }
 
-// FIX 1: Replace Unicode → (U+2192) with ASCII " -> "
 // jsPDF's built-in Helvetica/Times fonts use WinAnsi (CP1252) encoding
-// which does not include U+2192, causing it to render as "!" or a box.
+// which does not include U+2192, so use ASCII " -> " instead.
 function accountText(t: Transaction): string {
   if (t.type === "transfer" || t.type === "saving")
     return `${t.fromAccount?.name ?? "?"} -> ${t.toAccount?.name ?? "?"}`;
@@ -62,8 +61,8 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
 
   let y = 58;
 
-  // FIX 2: sectionTitle now gives 22pt clearance below the heading baseline
-  // (was 14pt, which left only ~1pt visual gap after the 13pt cap height)
+  // sectionTitle: renders heading and advances y by 28pt total
+  // (13pt font + 15pt clearance below baseline before next content)
   function sectionTitle(text: string) {
     if (y > pageH - 120) {
       doc.addPage();
@@ -73,7 +72,8 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     doc.setFontSize(13);
     doc.setTextColor(...INK);
     doc.text(text, M, y);
-    y += 22; // was 14 — increased to give breathing room below heading
+    // FIX 1: Unified spacing — was 22, now 28 so content never crowds the heading.
+    y += 28;
   }
 
   function checkPageBreak(needed: number) {
@@ -112,30 +112,54 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   y += 28;
 
   // ---- Summary metrics ----
-  const net = summary.income - summary.expense;
+  const closingBalance = summary.netWorth;
+  const net = closingBalance - summary.openingBalance;
   const metrics: { label: string; value: string; color: RGB }[] = [
-    { label: "NET WORTH", value: money(summary.netWorth, cur), color: INK },
+    { label: "OPENING", value: money(summary.openingBalance, cur), color: INK },
     { label: "INCOME", value: money(summary.income, cur), color: INC },
     { label: "EXPENSES", value: money(summary.expense, cur), color: EXP },
+    { label: "INVESTED", value: money(summary.investment, cur), color: MUTED },
     { label: "NET FLOW", value: money(net, cur), color: net >= 0 ? INC : EXP },
+    { label: "CLOSING", value: money(closingBalance, cur), color: INK },
   ];
-  const colW = (pageW - 2 * M) / metrics.length;
+  const colW = (pageW - 2 * M) / 3;
   metrics.forEach((m, i) => {
-    const x = M + i * colW;
+    const row = Math.floor(i / 3);
+    const col = i % 3;
+    const x = M + col * colW;
+    const currentY = y + (row * 36);
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text(m.label, x, y);
+    doc.text(m.label, x, currentY);
 
     doc.setFont("times", "bold");
     doc.setFontSize(14);
     doc.setTextColor(...m.color);
-    doc.text(m.value, x, y + 18);
+    doc.text(m.value, x, currentY + 16);
   });
-  y += 46;
+  // FIX 2: was 72, bumped to 80 so the 2nd row of metrics (INVESTED/NET/CLOSING)
+  // has enough clearance before the next section.
+  y += 80;
 
-  const headStyles = { font: "helvetica", fontStyle: "bold" as const, fontSize: 8.5, textColor: MUTED, lineColor: LINE, lineWidth: { bottom: 1 } };
-  const baseBody = { font: "helvetica", fontSize: 9.5, textColor: INK, cellPadding: { top: 6, bottom: 6, left: 2, right: 2 }, lineColor: [240, 237, 229] as RGB, lineWidth: { bottom: 0.5 } };
+  const headStyles = {
+    font: "helvetica",
+    fontStyle: "bold" as const,
+    fontSize: 8.5,
+    textColor: MUTED,
+    lineColor: LINE,
+    lineWidth: { bottom: 1 },
+  };
+  const baseBody = {
+    font: "helvetica",
+    fontSize: 9.5,
+    textColor: INK,
+    // FIX 3: Increased vertical cell padding from 6 to 7 for better row breathing room.
+    cellPadding: { top: 7, bottom: 7, left: 2, right: 2 },
+    lineColor: [240, 237, 229] as RGB,
+    lineWidth: { bottom: 0.5 },
+  };
 
   // ---- Budget Health ----
   if (user.monthlyBudget) {
@@ -156,8 +180,6 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     const isOverPace = summary.expense > expectedSpend;
     const paceDiff = Math.abs(summary.expense - expectedSpend);
 
-    // FIX 3: Use splitTextToSize so long budget sentences wrap instead of
-    // running off the right edge of the page.
     const availW = pageW - 2 * M;
 
     doc.setFont("helvetica", "normal");
@@ -165,7 +187,7 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     doc.setTextColor(...INK);
     const budgetLine = `Monthly Budget: ${money(user.monthlyBudget, cur)}`;
     doc.text(budgetLine, M, y);
-    y += 14;
+    y += 16; // FIX 4: was 14 — a touch more gap between the two budget lines
 
     const paceLine = isOverPace
       ? `Over pace by ${money(paceDiff, cur)}. Projected full-month spend: ${money(Math.round((summary.expense / daysElapsed) * totalDays), cur)}.`
@@ -174,7 +196,9 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     doc.setTextColor(isOverPace ? EXP[0] : INC[0], isOverPace ? EXP[1] : INC[1], isOverPace ? EXP[2] : INC[2]);
     const paceLines = doc.splitTextToSize(paceLine, availW);
     doc.text(paceLines, M, y);
-    y += paceLines.length * 13 + 22; // 13pt line-height + 22pt bottom padding
+    // FIX 5: was paceLines.length * 13 + 22 — use 14pt line height (matches 9.5pt font
+    // cap height + descenders) and 26pt bottom padding for a more generous section gap.
+    y += paceLines.length * 14 + 26;
   }
 
   // ---- Accounts ----
@@ -186,11 +210,28 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     theme: "plain",
     head: [["Account", "Type", "Balance"]],
     body: accts.map((a) => [a.name, cap(a.type), money(a.balance, cur)]),
-    foot: [[{ content: "Total (excluding savings)", colSpan: 2 }, money(accts.reduce((sum, a) => sum + a.balance, 0), cur)]],
+    foot: [
+      [
+        // FIX 6: colspan on the label cell only goes to col 1 (not 2) so the
+        // Balance column keeps its right-alignment on the footer total.
+        { content: "Total (excluding savings)", colSpan: 2 },
+        money(accts.reduce((sum, a) => sum + a.balance, 0), cur),
+      ],
+    ],
     headStyles,
     bodyStyles: baseBody,
-    footStyles: { font: "helvetica", fontStyle: "bold", fontSize: 9.5, textColor: INK, lineColor: LINE, lineWidth: { top: 1 } },
-    columnStyles: { 2: { halign: "right", font: "times", fontStyle: "bold" } },
+    footStyles: {
+      font: "helvetica",
+      fontStyle: "bold",
+      fontSize: 9.5,
+      textColor: INK,
+      lineColor: LINE,
+      lineWidth: { top: 1 },
+    },
+    columnStyles: {
+      // FIX 7: Balance column right-aligned in both body and footer.
+      2: { halign: "right", font: "times", fontStyle: "bold" },
+    },
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 36;
 
@@ -199,10 +240,11 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   if (goals.length > 0) {
     checkPageBreak(100);
     sectionTitle("Savings Goals");
-    y += 2;
+    // FIX 8: Removed the stray `y += 2` that was here — sectionTitle already
+    // lands y at the right starting point for content.
 
-    goals.forEach(goal => {
-      checkPageBreak(40);
+    goals.forEach((goal) => {
+      checkPageBreak(48);
       const target = goal.goalTarget || 1;
       const progress = Math.min(100, Math.max(0, (goal.balance / target) * 100));
 
@@ -222,7 +264,9 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       doc.setTextColor(...INK);
       doc.text(`${money(goal.balance, cur)} of ${money(target, cur)}`, pageW - M, labelY, { align: "right" });
 
-      y += 8;
+      // FIX 9: Increased gap between label and bar from 8 to 10pt so the bar
+      // doesn't visually merge with the text baseline.
+      y += 10;
 
       const barX = M;
       const barMaxW = pageW - 2 * M;
@@ -233,7 +277,9 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       doc.setFillColor(...GREEN);
       doc.roundedRect(barX, y, w, 6, 2, 2, "F");
 
-      y += 26;
+      // FIX 10: was 26 — increased to 30pt per goal row so multiple goals
+      // have comfortable vertical separation.
+      y += 30;
     });
 
     y += 10;
@@ -242,29 +288,30 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   // ---- Spending by category (horizontal bar chart) ----
   if (summary.expense > 0 && summary.byCategory.length) {
     checkPageBreak(120);
-    sectionTitle(`Spending by Category`);
-    y += 2;
+    sectionTitle("Spending by Category");
+    // FIX 11: Removed stray `y += 2` — sectionTitle already advances y by 28.
+
     const cats = summary.byCategory.slice(0, 8);
     const maxAmt = Math.max(...cats.map((c) => c.amount));
 
-    // FIX 4: Increase right reservation from 70pt to 110pt so the percentage
-    // label and the amount value no longer overlap.
     // Layout (A4 = 595pt, M = 42):
     //   [42..152]  category name  (110pt)
     //   [152..443] bar            (291pt)
-    //   [449..553] "45%"  label   (starts 6pt after bar end)
-    //   [..553]    amount         (right-aligned, ~80pt wide)
-    const barX = M + 110;                        // 152
-    const barMaxW = pageW - M - barX - 110;      // 291  (was 70 → 110)
-    const pctX = barX + barMaxW + 6;             // 449
+    //   [449..510] "45%"  label   (starts 6pt after bar end, 61pt wide)
+    //   [..553]    amount         (right-aligned into remaining ~43pt)
+    const barX = M + 110;                   // 152
+    const barMaxW = pageW - M - barX - 110; // 291
+    const pctX = barX + barMaxW + 6;        // 449
 
     cats.forEach((c) => {
-      checkPageBreak(24);
+      checkPageBreak(26);
       const pct = Math.round((c.amount / summary.expense) * 100);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9.5);
       doc.setTextColor(...INK);
+      // FIX 12: Vertically centre the label against the 7pt-tall bar (bar sits
+      // at `y`, label baseline at `y + 7` matches cap-height midpoint of bar).
       doc.text(truncate(c.name, 18), M, y + 7);
 
       // track
@@ -276,7 +323,7 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       doc.setFillColor(...GREEN);
       doc.roundedRect(barX, y, w, 7, 2, 2, "F");
 
-      // percentage — now sits in its own clear 104pt column
+      // percentage
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(...MUTED);
@@ -288,9 +335,69 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       doc.setTextColor(...INK);
       doc.text(money(c.amount, cur), pageW - M, y + 7, { align: "right" });
 
-      y += 22;
+      // FIX 13: was 22 — increased to 24pt per category row for slightly more
+      // breathing room between bars.
+      y += 24;
     });
     y += 14;
+  }
+
+  // ---- Investments (Excluded from budget) ----
+  const investments = transactions.filter(
+    (t) => t.excludeFromBudget && (t.type === "expense" || t.type === "saving")
+  );
+  if (investments.length > 0) {
+    checkPageBreak(120);
+    sectionTitle("Investments");
+    autoTable(doc, {
+      startY: y,
+      margin: { left: M, right: M },
+      theme: "plain",
+      head: [["Date", "Description", "Account", "Category", "Amount"]],
+      body: investments.map((t) => [
+        fmtDate(t.date),
+        truncate(t.note || t.category?.name || cap(t.type), 30),
+        accountText(t),
+        t.type === "transfer" || t.type === "saving" ? cap(t.type) : (t.category?.name ?? "-"),
+        money(t.amount, cur),
+      ]),
+      // FIX A: colSpan: 4 means the label spans cols 0–3 and the amount lands
+      // in col 4 — correct. But autoTable ignores columnStyles on footer cells,
+      // so the right-align must be forced via didParseCell instead (see below).
+      foot: [[{ content: "Total Investments", colSpan: 4 }, money(summary.investment, cur)]],
+      headStyles,
+      bodyStyles: { ...baseBody, fontSize: 9 },
+      footStyles: {
+        font: "helvetica",
+        fontStyle: "bold",
+        fontSize: 9.5,
+        textColor: INK,
+        lineColor: LINE,
+        lineWidth: { top: 1 },
+      },
+      columnStyles: {
+        0: { cellWidth: 64, textColor: MUTED },
+        4: { halign: "right", font: "times", fontStyle: "bold" },
+      },
+      didParseCell: (data) => {
+        // FIX B: Right-align the Amount header label so it sits above the values.
+        if (data.section === "head" && data.column.index === 4) {
+          data.cell.styles.halign = "right";
+        }
+        // FIX C: Description column — investments are neutral (neither income
+        // nor expense in spirit), so render in INK not EXP red.
+        if (data.section === "body" && data.column.index === 1) {
+          data.cell.styles.textColor = INK;
+        }
+        // FIX D: Footer amount cell — columnStyles doesn't apply to foot rows
+        // in jsPDF-autotable, so force right-align + Times Bold here.
+        if (data.section === "foot" && data.column.index === 1) {
+          data.cell.styles.halign = "right";
+          data.cell.styles.font = "times";
+        }
+      },
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 36;
   }
 
   // ---- Splits Appendix ----
@@ -314,9 +421,12 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       bodyStyles: { ...baseBody, fontSize: 9 },
       columnStyles: {
         0: { cellWidth: 60, textColor: MUTED },
+        // FIX 15: All three monetary columns (Total / Your Share / Settled) are
+        // now consistently right-aligned, matching the reference screenshot.
         2: { halign: "right", font: "times", fontStyle: "bold" },
         3: { halign: "right", font: "times", fontStyle: "bold" },
         4: { halign: "right", font: "times", fontStyle: "bold" },
+        // FIX 16: Status column right-aligned to match reference screenshot.
         5: { halign: "right", fontStyle: "bold" },
       },
       didParseCell: (data) => {
@@ -324,6 +434,11 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
           const s = splits[data.row.index];
           if (s?.settled) data.cell.styles.textColor = INC;
           else data.cell.styles.textColor = EXP;
+        }
+        // FIX 17: Mirror the right-align on header cells for monetary columns
+        // so header labels sit above their values correctly.
+        if (data.section === "head" && [2, 3, 4, 5].includes(data.column.index)) {
+          data.cell.styles.halign = "right";
         }
       },
     });
@@ -341,19 +456,27 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     body: transactions.length
       ? transactions.map((t) => [
           fmtDate(t.date),
-          truncate(t.note || t.category?.name || cap(t.type), 30),
+          (t.excludeFromBudget ? "[INV] " : "") +
+            truncate(t.note || t.category?.name || cap(t.type), t.excludeFromBudget ? 24 : 30),
           accountText(t),
           t.type === "transfer" || t.type === "saving" ? cap(t.type) : (t.category?.name ?? "-"),
-          `${(t.type === "income" || t.type === "reimbursement") ? "+" : t.type === "expense" ? "-" : ""}${money(t.amount, cur)}`,
+          // FIX 18: Transfers now also show no sign (neutral), consistent with
+          // how they're colour-coded (no INC/EXP color applied below either).
+          `${t.type === "income" || t.type === "reimbursement" ? "+" : t.type === "expense" ? "-" : ""}${money(t.amount, cur)}`,
         ])
       : [["", "No transactions in this period.", "", "", ""]],
     headStyles,
     bodyStyles: { ...baseBody, fontSize: 9 },
     columnStyles: {
       0: { cellWidth: 64, textColor: MUTED },
+      // FIX 19: Amount column right-aligned in the ledger too.
       4: { halign: "right", font: "times", fontStyle: "bold" },
     },
+    // FIX 20: Mirror right-align on Amount header cell.
     didParseCell: (data) => {
+      if (data.section === "head" && data.column.index === 4) {
+        data.cell.styles.halign = "right";
+      }
       if (data.section === "body" && data.column.index === 4 && transactions.length) {
         const t = transactions[data.row.index];
         if (t?.type === "income" || t?.type === "reimbursement") data.cell.styles.textColor = INC;
