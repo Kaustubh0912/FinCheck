@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, no-undef */
 const fs = require('fs');
 ['src/components/ListsSheet.tsx', 'src/pages/Dashboard.tsx', 'src/pages/Transactions.tsx', 'src/pages/Splits.tsx'].forEach(f => {
   let txt = fs.readFileSync(f, 'utf8');
