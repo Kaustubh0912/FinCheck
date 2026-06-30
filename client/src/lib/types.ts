@@ -79,6 +79,7 @@ export interface Summary {
   todayExpense: number;
   investment: number;
   openingBalance: number;
+  closingBalance: number;
   byCategory: { categoryId: string | null; name: string; icon: string; color: string; amount: number }[];
   accounts: Account[];
 }

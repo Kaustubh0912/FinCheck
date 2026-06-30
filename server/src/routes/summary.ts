@@ -58,7 +58,8 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
 
   // Opening balance: mirror the exact same logic as accountsWithBalances()
   // but only count transactions with date < from (i.e. before the period).
-  const [inflowBefore, outflowBefore] = await Promise.all([
+  // Closing balance: same logic but date <= to.
+  const [inflowBefore, outflowBefore, inflowAfter, outflowAfter] = await Promise.all([
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] }, toAccountId: { $ne: null }, date: { $lt: from } } },
       { $group: { _id: "$toAccountId", amount: { $sum: "$amount" } } },
@@ -67,10 +68,21 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
       { $match: { userId: userObjectId, type: { $in: ["expense", "transfer", "saving"] }, fromAccountId: { $ne: null }, date: { $lt: from } } },
       { $group: { _id: "$fromAccountId", amount: { $sum: "$amount" } } },
     ]),
+    Transaction.aggregate([
+      { $match: { userId: userObjectId, type: { $in: ["income", "transfer", "saving", "reimbursement"] }, toAccountId: { $ne: null }, date: { $lte: to } } },
+      { $group: { _id: "$toAccountId", amount: { $sum: "$amount" } } },
+    ]),
+    Transaction.aggregate([
+      { $match: { userId: userObjectId, type: { $in: ["expense", "transfer", "saving"] }, fromAccountId: { $ne: null }, date: { $lte: to } } },
+      { $group: { _id: "$fromAccountId", amount: { $sum: "$amount" } } },
+    ]),
   ]);
 
   const inBeforeMap = new Map(inflowBefore.map((r) => [r._id.toString(), r.amount ?? 0]));
   const outBeforeMap = new Map(outflowBefore.map((r) => [r._id.toString(), r.amount ?? 0]));
+
+  const inAfterMap = new Map(inflowAfter.map((r) => [r._id.toString(), r.amount ?? 0]));
+  const outAfterMap = new Map(outflowAfter.map((r) => [r._id.toString(), r.amount ?? 0]));
 
   const catMap = new Map(categories.map((c) => [c.id, c.toJSON()]));
   const byCategory = byCategoryRaw
@@ -92,6 +104,9 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   // the money was there at the start of the period. Closing uses actual netWorth.
   const openingBalance = accounts
     .reduce((sum, a) => sum + a.openingBalance + (inBeforeMap.get(a.id) ?? 0) - (outBeforeMap.get(a.id) ?? 0), 0);
+  
+  const closingBalance = accounts
+    .reduce((sum, a) => sum + a.openingBalance + (inAfterMap.get(a.id) ?? 0) - (outAfterMap.get(a.id) ?? 0), 0);
 
   res.json({
     range: { from, to },
@@ -101,6 +116,7 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     todayExpense: todayExpenseAgg[0]?.amount ?? 0,
     investment: investmentAgg[0]?.amount ?? 0,
     openingBalance,
+    closingBalance,
     byCategory,
     accounts,
   });

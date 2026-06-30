@@ -112,7 +112,9 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   y += 28;
 
   // ---- Summary metrics ----
-  const closingBalance = summary.netWorth;
+  // Closing = actual account balance at the end of the period (summary.closingBalance)
+  // not the formula, because split-fronted amounts make the formula approximate.
+  const closingBalance = summary.closingBalance;
   const net = closingBalance - summary.openingBalance;
   const metrics: { label: string; value: string; color: RGB }[] = [
     { label: "OPENING", value: money(summary.openingBalance, cur), color: INK },
