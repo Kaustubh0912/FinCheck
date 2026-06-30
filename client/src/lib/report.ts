@@ -118,7 +118,7 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     { label: "OPENING", value: money(summary.openingBalance, cur), color: INK },
     { label: "INCOME", value: money(summary.income, cur), color: INC },
     { label: "EXPENSES", value: money(summary.expense, cur), color: EXP },
-    { label: "INVESTED", value: money(summary.investment, cur), color: MUTED },
+    { label: "OTHER", value: money(summary.investment, cur), color: MUTED },
     { label: "NET FLOW", value: money(net, cur), color: net >= 0 ? INC : EXP },
     { label: "CLOSING", value: money(closingBalance, cur), color: INK },
   ];
@@ -348,7 +348,7 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
   );
   if (investments.length > 0) {
     checkPageBreak(120);
-    sectionTitle("Investments");
+    sectionTitle("Other Expenditures (Excluded from Budget)");
     autoTable(doc, {
       startY: y,
       margin: { left: M, right: M },
