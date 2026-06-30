@@ -18,6 +18,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if ((window as any).__BONEYARD_BUILD) {
+      setUser({ id: "mock", email: "mock@mock.com", name: "Mock", currency: "INR" });
+      setLoading(false);
+      return;
+    }
+    
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setLoading(false);

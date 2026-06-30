@@ -5,6 +5,7 @@ import { formatMoney } from "../lib/format";
 import { Icon } from "../lib/icons";
 import { resolveThemeColor } from "../lib/colors";
 import type { Split } from "../lib/types";
+import { Skeleton } from "boneyard-js/react";
 
 export function Splits() {
   const { user } = useAuth();
@@ -31,15 +32,24 @@ export function Splits() {
       </div>
 
       <div className="account-list">
-        {isLoading ? (
-          <p className="muted center pad">Loading...</p>
-        ) : splits.length === 0 ? (
-          <p className="muted center pad">No {tab} splits found.</p>
-        ) : (
-          splits.map((split) => (
-            <SplitCard key={split.id} split={split} currency={currency} isSettled={isSettled} liveAccounts={liveAccounts} />
-          ))
-        )}
+        <Skeleton
+          name="splits-list"
+          loading={isLoading}
+          fixture={
+            <>
+              <SplitCard split={{ id: "f1", transactionId: "t", totalAmount: 10000, myShare: 5000, splitNote: "Loading split...", settledAmount: 2000, settled: false, createdAt: new Date().toISOString() } as unknown as Split} currency={currency} isSettled={false} liveAccounts={liveAccounts} />
+              <SplitCard split={{ id: "f2", transactionId: "t", totalAmount: 10000, myShare: 5000, splitNote: "Loading split...", settledAmount: 2000, settled: false, createdAt: new Date().toISOString() } as unknown as Split} currency={currency} isSettled={false} liveAccounts={liveAccounts} />
+            </>
+          }
+        >
+          {splits.length === 0 ? (
+            <p className="muted center pad">No {tab} splits found.</p>
+          ) : (
+            splits.map((split) => (
+              <SplitCard key={split.id} split={split} currency={currency} isSettled={isSettled} liveAccounts={liveAccounts} />
+            ))
+          )}
+        </Skeleton>
       </div>
     </div>
   );

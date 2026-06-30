@@ -8,6 +8,7 @@ import { Dropdown } from "../components/Dropdown";
 import { Icon } from "../lib/icons";
 import { dayKey, formatDayHeading, formatMoney } from "../lib/format";
 import type { Transaction, TxnType } from "../lib/types";
+import { Skeleton } from "boneyard-js/react";
 
 const TYPE_FILTERS: { key: TxnType | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -19,6 +20,7 @@ const TYPE_FILTERS: { key: TxnType | "all"; label: string }[] = [
 export function Transactions() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
+  const isBoneyard = typeof window !== "undefined" && (window as any).__BONEYARD_BUILD;
   const { data: accounts = [] } = useAccounts();
 
   const [type, setType] = useState<TxnType | "all">("all");
@@ -70,39 +72,64 @@ export function Transactions() {
         ]}
       />
 
-      {isLoading ? (
-        <p className="muted center pad">Loading…</p>
-      ) : groups.length === 0 ? (
-        <p className="muted center pad">No transactions match this filter.</p>
-      ) : (
-        groups.map(([day, items]) => {
-          const dayTotal = items.reduce(
-            (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : (t.type === "expense" || t.type === "saving" ? -t.amount : 0)),
-            0
-          );
-          return (
-            <section key={day} className="day-group">
-              <div className="day-head">
-                <span>{formatDayHeading(day)}</span>
-                {dayTotal !== 0 && (
-                  <span className={dayTotal > 0 ? "amt-income" : "amt-expense"}>
-                    {dayTotal > 0 ? "+" : "−"}
-                    {formatMoney(Math.abs(dayTotal), currency)}
-                  </span>
-                )}
-              </div>
-              <div className="txn-list">
-                {items.map((t) => (
-                  <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
-                ))}
-              </div>
-            </section>
-          );
-        })
-      )}
+      <Skeleton
+        name="transactions-list"
+        loading={isLoading}
+        fixture={
+          <section className="day-group">
+            <div className="day-head">
+              <span>Today</span>
+              <span className="amt-expense">−100</span>
+            </div>
+            <div className="txn-list">
+              <TransactionItem 
+                txn={{ id: "fix1", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
+                currency={currency} 
+              />
+              <TransactionItem 
+                txn={{ id: "fix2", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
+                currency={currency} 
+              />
+              <TransactionItem 
+                txn={{ id: "fix3", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
+                currency={currency} 
+              />
+            </div>
+          </section>
+        }
+      >
+        {groups.length === 0 ? (
+          <p className="muted center pad">No transactions match this filter.</p>
+        ) : (
+          groups.map(([day, items]) => {
+            const dayTotal = items.reduce(
+              (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : (t.type === "expense" || t.type === "saving" ? -t.amount : 0)),
+              0
+            );
+            return (
+              <section key={day} className="day-group">
+                <div className="day-head">
+                  <span>{formatDayHeading(day)}</span>
+                  {dayTotal !== 0 && (
+                    <span className={dayTotal > 0 ? "amt-income" : "amt-expense"}>
+                      {dayTotal > 0 ? "+" : "−"}
+                      {formatMoney(Math.abs(dayTotal), currency)}
+                    </span>
+                  )}
+                </div>
+                <div className="txn-list">
+                  {items.map((t) => (
+                    <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        )}
+      </Skeleton>
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
-      <ListsSheet open={listsOpen} onClose={() => setListsOpen(false)} />
+      <ListsSheet open={listsOpen || isBoneyard} onClose={() => setListsOpen(false)} />
     </div>
   );
 }
