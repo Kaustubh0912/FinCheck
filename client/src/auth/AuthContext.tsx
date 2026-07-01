@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setLoading(false);
+      setHydrating(false);
       return;
     }
 
@@ -47,6 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .get<{ user: User }>("/auth/me", { signal: controller.signal })
       .then((res) => setUser(res.data.user))
       .catch((err) => {
+        // If the request was aborted (e.g. StrictMode cleanup), don't touch state.
+        // The re-mounted effect will start a fresh request.
+        if (controller.signal.aborted) return;
+
         // Only wipe the token if the server explicitly rejected it (401).
         // Network errors, timeouts, and cold-start failures should NOT
         // delete a potentially valid token.
@@ -56,6 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         clearTimeout(timeout);
+        // Don't clear loading/hydrating if this request was aborted —
+        // the replacement effect will handle it.
+        if (controller.signal.aborted) return;
         setLoading(false);
         setHydrating(false);
       });

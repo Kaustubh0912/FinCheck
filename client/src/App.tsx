@@ -9,12 +9,18 @@ import { Accounts } from "./pages/Accounts";
 import { Settings } from "./pages/Settings";
 import { Splits } from "./pages/Splits";
 import { Budget } from "./pages/Budget";
+import { AppSkeleton } from "./components/AppSkeleton";
 
 export default function App() {
   const { user, loading, hydrating } = useAuth();
 
+  // Still verifying a stored token — show app skeleton, NOT the login page
+  if (hydrating) {
+    return <AppSkeleton />;
+  }
+
   if (loading && !user) {
-    return <Login hydrating={hydrating} />;
+    return <Login />;
   }
 
   if (!user) {
