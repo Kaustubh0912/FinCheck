@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useAuth } from "./auth/AuthContext";
-import { Icon } from "./lib/icons";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
@@ -12,15 +11,10 @@ import { Splits } from "./pages/Splits";
 import { Budget } from "./pages/Budget";
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, hydrating } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="splash">
-        <div className="splash-logo"><Icon name="rupee" /></div>
-        <p>FinCheck</p>
-      </div>
-    );
+  if (loading && !user) {
+    return <Login hydrating={hydrating} />;
   }
 
   if (!user) {

@@ -176,6 +176,31 @@ a { color: inherit; text-decoration: none; }
 .auth-brand h1 { font-family: var(--serif); font-size: 1.9rem; font-weight: 500; letter-spacing: -0.01em; }
 .auth-form { display: grid; gap: 16px; margin-top: 20px; }
 
+/* Thin animated bar shown at the top of Login while silently verifying an existing token */
+.auth-hydrating-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--line);
+  overflow: hidden;
+  z-index: 9999;
+}
+.auth-hydrating-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--contrast);
+  border-radius: 2px;
+  animation: hydrate-slide 1.2s ease-in-out infinite;
+}
+@keyframes hydrate-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
 /* ===== App shell ===== */
 .app-shell { min-height: 100vh; }
 .app-content {

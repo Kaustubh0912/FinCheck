@@ -3,7 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Icon } from "../lib/icons";
 import { errMessage } from "../api/client";
 
-export function Login() {
+export function Login({ hydrating }: { hydrating?: boolean }) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -29,6 +29,7 @@ export function Login() {
 
   return (
     <div className="auth-page">
+      {hydrating && <div className="auth-hydrating-bar" />}
       <div className="auth-card">
         <div className="auth-brand">
           <div className="splash-logo"><Icon name="rupee" /></div>
