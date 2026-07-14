@@ -172,12 +172,11 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     const toDate = new Date(summary.range.to);
     const now = new Date();
 
-    const totalDays = Math.round((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
-    let currentDay = totalDays;
-    if (now >= fromDate && now <= toDate) {
-      currentDay = Math.round((now.getTime() - fromDate.getTime()) / 86400000) + 1;
-    }
-    const daysElapsed = currentDay;
+    // Use the calendar month length (e.g. 31 for July) so the pace is
+    // always measured against the full monthly budget, not the report range.
+    const totalDays = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0).getDate();
+    const rangeEnd = now <= toDate ? now : toDate;
+    const daysElapsed = Math.max(1, Math.floor((rangeEnd.getTime() - fromDate.getTime()) / 86400000) + 1);
     const expectedSpend = (user.monthlyBudget / totalDays) * daysElapsed;
     const isOverPace = summary.expense > expectedSpend;
     const paceDiff = Math.abs(summary.expense - expectedSpend);
