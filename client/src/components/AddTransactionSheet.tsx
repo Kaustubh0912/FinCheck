@@ -89,10 +89,63 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Enter submits from any input; buttons keep their native Enter-to-click behavior.
+  // Keydown listener on document (capture phase to beat global hooks).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      // In-sheet Alt shortcuts
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        let handled = false;
+        switch (e.code) {
+          case "Digit1":
+          case "Numpad1":
+            setType("expense");
+            setCategoryId("");
+            handled = true;
+            break;
+          case "Digit2":
+          case "Numpad2":
+            setType("income");
+            setCategoryId("");
+            handled = true;
+            break;
+          case "Digit3":
+          case "Numpad3":
+            setType("transfer");
+            setCategoryId("");
+            handled = true;
+            break;
+          case "Digit4":
+          case "Numpad4":
+            setType("split");
+            setCategoryId("");
+            handled = true;
+            break;
+          case "KeyS":
+            if (!(saveTxn.isPending || createSplit.isPending)) submit();
+            handled = true;
+            break;
+          case "KeyA":
+            if (success && !editing) {
+              setSuccess(false);
+              setAmount("");
+              setNote("");
+            }
+            handled = true;
+            break;
+          case "KeyD":
+            if (success) onClose();
+            handled = true;
+            break;
+        }
+        if (handled) {
+          e.preventDefault();
+          e.stopPropagation(); // Stop global hook
+          return;
+        }
+      }
+
+      // Enter submits from any input; buttons keep their native Enter-to-click behavior.
       if (e.key !== "Enter" || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "TEXTAREA") return;
@@ -100,10 +153,10 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       e.preventDefault();
       submit();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, { capture: true });
+    return () => document.removeEventListener("keydown", onKey, { capture: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, excludeFromBudget, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending]);
+  }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, excludeFromBudget, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending, success]);
 
   function submit() {
     setError("");
@@ -210,6 +263,13 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
             </button>
           </div>
         </div>
+        {success && (
+          <div className="txn-shortcut-hints">
+            <span><kbd>Alt</kbd>+<kbd>A</kbd> Add another</span>
+            <span><kbd>Alt</kbd>+<kbd>D</kbd> Done</span>
+            <span><kbd>Esc</kbd> Close</span>
+          </div>
+        )}
       </Sheet>
     );
   }
@@ -221,16 +281,23 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       onClose={onClose}
       title={editing ? "Edit transaction" : "New transaction"}
       footer={
-        <div className="txn-footer">
-          {editing && (
-            <button className="btn btn-ghost-danger" onClick={remove} disabled={deleteTxn.isPending}>
-              <Icon name="trash" /> Delete
+        <>
+          <div className="txn-footer">
+            {editing && (
+              <button className="btn btn-ghost-danger" onClick={remove} disabled={deleteTxn.isPending}>
+                <Icon name="trash" /> Delete
+              </button>
+            )}
+            <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending || createSplit.isPending}>
+              {saveTxn.isPending || createSplit.isPending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
             </button>
-          )}
-          <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending || createSplit.isPending}>
-            {saveTxn.isPending || createSplit.isPending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
-          </button>
-        </div>
+          </div>
+          <div className="txn-shortcut-hints">
+            <span><kbd>Alt</kbd>+<kbd>1‑4</kbd> Type</span>
+            <span><kbd>Alt</kbd>+<kbd>S</kbd> Submit</span>
+            <span><kbd>Enter</kbd> Submit</span>
+          </div>
+        </>
       }
     >
       {/* Type selector */}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useAccounts, useTransactions, type TxnFilters } from "../api/hooks";
 import { TransactionItem } from "../components/TransactionItem";
@@ -27,6 +27,12 @@ export function Transactions() {
   const [accountId, setAccountId] = useState("");
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [listsOpen, setListsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenSearch = () => setListsOpen(true);
+    window.addEventListener("fincheck:open-search", handleOpenSearch);
+    return () => window.removeEventListener("fincheck:open-search", handleOpenSearch);
+  }, []);
 
   const filters: TxnFilters = {
     type: type === "all" ? undefined : type,

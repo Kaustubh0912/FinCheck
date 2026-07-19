@@ -1,22 +1,22 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { PillNav } from "./PillNav";
 import { SideNav } from "./SideNav";
 import { AddTransactionSheet } from "./AddTransactionSheet";
+import { useKeyboardNav } from "../lib/useKeyboardNav";
+import { ShortcutCard } from "./ShortcutCard";
+import { Icon } from "../lib/icons";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [addOpen, setAddOpen] = useState(false);
-  const openAdd = useCallback(() => setAddOpen(true), []);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!e.altKey || e.ctrlKey || e.metaKey) return;
-      if ((e.key || "").toLowerCase() !== "t") return;
-      e.preventDefault();
-      setAddOpen(true);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  const openAdd = useCallback(() => setAddOpen(true), []);
+  const toggleShortcuts = useCallback(() => setShortcutsOpen(prev => !prev), []);
+
+  useKeyboardNav({
+    onAddTransaction: openAdd,
+    onToggleShortcuts: toggleShortcuts
+  });
 
   return (
     <div className="app-shell">
@@ -24,6 +24,10 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="app-content">{children}</main>
       <PillNav onAdd={openAdd} />
       <AddTransactionSheet open={addOpen} onClose={() => setAddOpen(false)} />
+      <ShortcutCard open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <button className="shortcut-trigger" onClick={toggleShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (Alt + /)">
+        <Icon name="keyboard" />
+      </button>
     </div>
   );
 }

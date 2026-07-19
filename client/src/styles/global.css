@@ -713,6 +713,7 @@ a { color: inherit; text-decoration: none; }
 .sidenav { display: none; }
 /* Desktop layout wrappers — transparent on mobile so the stack is untouched. */
 .dash-cols, .dash-main, .dash-aside, .settings-cards { display: contents; }
+.txn-shortcut-hints { display: none; }
 
 /* ===== Tablet (still pill nav, slightly roomier) ===== */
 @media (min-width: 720px) {
@@ -819,6 +820,158 @@ a { color: inherit; text-decoration: none; }
   }
   .page.settings > .btn-ghost-danger.full { width: auto; max-width: 260px; }
   .page.settings > .version { text-align: left; }
+
+  /* ===== Desktop Shortcut Card ===== */
+  .shortcut-trigger {
+    position: fixed;
+    bottom: 24px;
+    right: 32px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    z-index: 40;
+  }
+  .shortcut-trigger:hover {
+    color: var(--ink);
+    border-color: var(--ink-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+  .shortcut-trigger:active {
+    transform: translateY(0);
+  }
+
+  .shortcut-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    animation: fadeIn 0.2s ease;
+  }
+  .shortcut-card {
+    width: 420px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--line) inset;
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  [data-theme="dark"] .shortcut-card {
+    background: rgba(30, 30, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .shortcut-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .shortcut-card-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  .shortcut-card-subheader {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 24px 0 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+  .shortcut-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .shortcut-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .shortcut-desc {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .shortcut-keys {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  kbd {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-family: var(--font);
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.5);
+  }
+  [data-theme="dark"] kbd {
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .shortcut-plus {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  
+  /* In-sheet hint bar */
+  .txn-shortcut-hints {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding-top: 16px;
+    margin-top: 4px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .txn-shortcut-hints kbd {
+    background: transparent;
+    border: 1px solid var(--line);
+    box-shadow: none;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-size: 0.75rem;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ===== Wide desktop — keep content from sprawling ===== */
