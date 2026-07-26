@@ -18,4 +18,19 @@ describe('Splits routes', () => {
     expect(res.body.totalAmount).toBe(10000);
     expect(res.body.myShare).toBe(4000);
   });
+
+  it('POST /api/splits allows myShare to be 0', async () => {
+    const user = await createTestUser('split0@test.com', 'Split Zero User');
+    const acc = await createTestAccount(user.id);
+    const cat = await createTestCategory(user.id);
+
+    const res = await request(testApp)
+      .post('/api/splits')
+      .set(authHeader(user.id))
+      .send({ totalAmount: 50, myShare: 0, fromAccountId: acc.id, categoryId: cat.id });
+    
+    expect(res.status).toBe(201);
+    expect(res.body.totalAmount).toBe(5000);
+    expect(res.body.myShare).toBe(0);
+  });
 });

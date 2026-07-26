@@ -169,7 +169,7 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
         shareValue = Math.round((value / numPeople) * 100) / 100;
       } else {
         shareValue = Number(myShare);
-        if (!shareValue || shareValue <= 0) return setError("Enter your share.");
+        if (myShare.trim() === "" || isNaN(shareValue) || shareValue < 0) return setError("Enter your share.");
       }
       if (shareValue > value) return setError("Your share cannot be greater than the total amount.");
       if (!fromAccountId) return setError("Choose the account to take money from.");

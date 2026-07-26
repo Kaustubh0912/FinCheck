@@ -86,7 +86,7 @@ export const changePasswordSchema = z.object({
 
 export const createSplitSchema = z.object({
   totalAmount: z.number().positive().finite().max(99999999.99), // major units
-  myShare: z.number().positive().finite().max(99999999.99), // major units
+  myShare: z.number().min(0).finite().max(99999999.99), // major units
   fromAccountId: z.string().min(1),
   categoryId: z.string().optional().nullable(),
   note: z.string().trim().max(200).optional(),
