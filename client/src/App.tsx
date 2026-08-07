@@ -9,14 +9,22 @@ import { Accounts } from "./pages/Accounts";
 import { Settings } from "./pages/Settings";
 import { Splits } from "./pages/Splits";
 import { Budget } from "./pages/Budget";
-import { AppSkeleton } from "./components/AppSkeleton";
+import { Icon } from "./lib/icons";
 
 export default function App() {
   const { user, loading, hydrating } = useAuth();
 
-  // Still verifying a stored token — show app skeleton, NOT the login page
+  // Still verifying a stored token — show clean branded splash screen
   if (hydrating) {
-    return <AppSkeleton />;
+    return (
+      <div className="auth-splash">
+        <div className="auth-hydrating-bar" />
+        <div className="auth-brand">
+          <div className="splash-logo"><Icon name="rupee" /></div>
+          <h1>FinCheck</h1>
+        </div>
+      </div>
+    );
   }
 
   if (loading && !user) {

@@ -20,19 +20,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // `hydrating` is true only while we silently verify an existing token.
-  // The UI can show Login immediately instead of a splash screen.
   const [hydrating, setHydrating] = useState(() => {
-    if ((window as any).__BONEYARD_BUILD) return false;
     return !!localStorage.getItem(TOKEN_KEY);
   });
 
   useEffect(() => {
-    if ((window as any).__BONEYARD_BUILD) {
-      setUser({ id: "mock", email: "mock@mock.com", name: "Mock", currency: "INR" });
-      setLoading(false);
-      return;
-    }
-    
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setLoading(false);

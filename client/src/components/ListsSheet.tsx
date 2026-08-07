@@ -8,8 +8,7 @@ import { Dropdown } from "./Dropdown";
 import { SmartRangeInput } from "./SmartRangeInput";
 import { Sheet } from "./Sheet";
 import { formatMoney } from "../lib/format";
-import { Skeleton } from "boneyard-js/react";
-import type { Transaction } from "../lib/types";
+import { useDelayedPending } from "../lib/useDelayedPending";
 
 interface ListsSheetProps {
   open: boolean;
@@ -21,15 +20,16 @@ export function ListsSheet({ open, onClose }: ListsSheetProps) {
   const { data: categories = [] } = useCategories();
   const currency = user?.currency ?? "INR";
 
-  const isBoneyard = typeof window !== "undefined" && (window as any).__BONEYARD_BUILD;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [txRangeText, setTxRangeText] = useState("1..t");
-  const [params, setParams] = useState<{ from: string; to: string; categoryId?: string } | null>(isBoneyard ? { from: "", to: "" } : null);
+  const [params, setParams] = useState<{ from: string; to: string; categoryId?: string } | null>(null);
   const [error, setError] = useState("");
 
   const { data: transactions = [], isLoading } = useTransactions(
     params ? { ...params, limit: 500 } : { limit: 0 }
   );
+
+  const delayedPending = useDelayedPending(isLoading);
 
   const totalSum = transactions.reduce(
     (sum, t) => sum + (t.type === "income" ? t.amount : t.type === "expense" ? -t.amount : 0),
@@ -74,54 +74,41 @@ export function ListsSheet({ open, onClose }: ListsSheetProps) {
           </div>
           <SmartRangeInput value={txRangeText} onChange={setTxRangeText} />
           <button type="submit" className="btn btn-primary" disabled={isLoading}>
-            <Icon name={isLoading ? "activity" : "search"} className={isLoading ? "fa-spin" : ""} />
-            {isLoading ? "Searching…" : "Search"}
+            <Icon name="search" />
+            {delayedPending ? "Searching…" : "Search"}
           </button>
         </form>
 
         {error && <p className="form-error">{error}</p>}
 
-        <Skeleton 
-          name="lists-sheet-results"
-          loading={isLoading}
-          fixture={
-            <div className="lists-results">
-              <div className="stat-card" style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "20px" }}>
-                <span className="stat-label">Net Total</span>
-                <span className="stat-value" style={{ fontSize: "1.8rem" }}>100</span>
-              </div>
-              <div className="txn-list" style={{ marginTop: "10px" }}>
-                <TransactionItem txn={{ id: "f1", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} currency={currency} />
-                <TransactionItem txn={{ id: "f2", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} currency={currency} />
-              </div>
-            </div>
-          }
-        >
-          {params && (
-            <div className="lists-results">
-              <div
-                className="stat-card"
-                style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "20px" }}
+        {isLoading ? (
+          <div className="loading-dots-container">
+            <div className="loading-dots"><span /><span /><span /></div>
+          </div>
+        ) : params && (
+          <div className="lists-results fade-in">
+            <div
+              className="stat-card"
+              style={{ borderTop: "1px solid var(--line)", marginTop: "24px", paddingTop: "20px" }}
+            >
+              <span className="stat-label">Net Total</span>
+              <span
+                className={`stat-value ${totalSum > 0 ? "amt-income" : totalSum < 0 ? "amt-expense" : ""}`}
+                style={{ fontSize: "1.8rem" }}
               >
-                <span className="stat-label">Net Total</span>
-                <span
-                  className={`stat-value ${totalSum > 0 ? "amt-income" : totalSum < 0 ? "amt-expense" : ""}`}
-                  style={{ fontSize: "1.8rem" }}
-                >
-                  {totalSum > 0 ? "+" : totalSum < 0 ? "−" : ""}
-                  {formatMoney(Math.abs(totalSum), currency)}
-                </span>
-              </div>
-              <div className="txn-list" style={{ marginTop: "10px" }}>
-                {transactions.length === 0 ? (
-                  <p className="muted center pad">No transactions found for this period.</p>
-                ) : (
-                  transactions.map((t) => <TransactionItem key={t.id} txn={t} currency={currency} />)
-                )}
-              </div>
+                {totalSum > 0 ? "+" : totalSum < 0 ? "−" : ""}
+                {formatMoney(Math.abs(totalSum), currency)}
+              </span>
             </div>
-          )}
-        </Skeleton>
+            <div className="txn-list" style={{ marginTop: "10px" }}>
+              {transactions.length === 0 ? (
+                <p className="muted center pad">No transactions found for this period.</p>
+              ) : (
+                transactions.map((t) => <TransactionItem key={t.id} txn={t} currency={currency} />)
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </Sheet>
   );

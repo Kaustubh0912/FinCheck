@@ -10,7 +10,9 @@ import { currencySymbol } from "../lib/format";
 import { CategorySheet } from "../components/CategorySheet";
 import { SmartRangeInput } from "../components/SmartRangeInput";
 import { PasswordSheet } from "../components/PasswordSheet";
+import { CharCount } from "../components/CharCount";
 import type { Category, CategoryKind } from "../lib/types";
+import { useDelayedPending } from "../lib/useDelayedPending";
 
 export function Settings() {
   const { user, logout, setUser } = useAuth();
@@ -21,9 +23,21 @@ export function Settings() {
   const [name, setName] = useState(user?.name ?? "");
   const [budgetInput, setBudgetInput] = useState(user?.monthlyBudget ? (user.monthlyBudget / 100).toString() : "");
   const [savingProfile, setSavingProfile] = useState(false);
+  const delayedSavingProfile = useDelayedPending(savingProfile);
   const [profileMsg, setProfileMsg] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [reportProgressStep, setReportProgressStep] = useState(0);
   const [reportRangeText, setReportRangeText] = useState("1..t");
+
+  useEffect(() => {
+    if (!reporting) {
+      setReportProgressStep(0);
+      return;
+    }
+    const t1 = setTimeout(() => setReportProgressStep(1), 2000);
+    const t2 = setTimeout(() => setReportProgressStep(2), 4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [reporting]);
 
   const [catSheet, setCatSheet] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | undefined>();
@@ -45,6 +59,13 @@ export function Settings() {
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      setName(user.name ?? "");
+      setBudgetInput(user.monthlyBudget ? (user.monthlyBudget / 100).toString() : "");
+    }
+  }, [user]);
+
   async function saveProfile() {
     setSavingProfile(true);
     setProfileMsg("");
@@ -56,7 +77,7 @@ export function Settings() {
       if (budgetInput.trim() !== "" && (isNaN(budgetNum) || budgetNum <= 0)) {
         throw new Error("Budget must be greater than 0");
       }
-      const monthlyBudget = budgetInput.trim() !== "" && !isNaN(budgetNum) ? Math.round(budgetNum * 100) : null;
+      const monthlyBudget = budgetInput.trim() !== "" && !isNaN(budgetNum) ? budgetNum : null;
       const res = await api.patch<{ user: typeof user }>("/auth/me", {
         name,
         monthlyBudget,
@@ -153,8 +174,11 @@ export function Settings() {
       <section className="card">
         <h2 className="card-title">Profile</h2>
         <div className="field">
-          <label className="field-label">Name</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="field-header">
+            <label className="field-label">Name</label>
+            <CharCount current={name.length} max={80} />
+          </div>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
         </div>
         <div className="field">
           <label className="field-label">Email</label>
@@ -175,8 +199,8 @@ export function Settings() {
           </div>
           <p className="date-hint">Your total spending limit for the month.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile}>
-          {savingProfile ? "Saving…" : "Save profile"}
+        <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile || !name.trim()}>
+          {delayedSavingProfile ? "Saving…" : "Save profile"}
         </button>
         {profileMsg && <span className={profileMsg === "Saved" ? "text-success save-msg" : "form-error save-msg"} style={{ display: "inline-block", marginTop: "8px" }}>{profileMsg}</span>}
         <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
@@ -246,7 +270,11 @@ export function Settings() {
         <h2 className="card-title">Report</h2>
         <SmartRangeInput value={reportRangeText} onChange={setReportRangeText} />
         <button className="btn btn-ghost" onClick={downloadReport} disabled={reporting}>
-          <Icon name="download" /> {reporting ? "Preparing report…" : "Download PDF report"}
+          <Icon name="download" /> {
+            reporting
+              ? (reportProgressStep === 0 ? "Fetching data…" : reportProgressStep === 1 ? "Generating report…" : "Almost there…")
+              : "Download PDF report"
+          }
         </button>
       </section>
       </div>

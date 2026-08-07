@@ -5,7 +5,7 @@ import { formatMoney } from "../lib/format";
 import { Icon } from "../lib/icons";
 import { resolveThemeColor } from "../lib/colors";
 import type { Split } from "../lib/types";
-import { Skeleton } from "boneyard-js/react";
+import { useDelayedPending } from "../lib/useDelayedPending";
 
 export function Splits() {
   const { user } = useAuth();
@@ -32,24 +32,19 @@ export function Splits() {
       </div>
 
       <div className="account-list">
-        <Skeleton
-          name="splits-list"
-          loading={isLoading}
-          fixture={
-            <>
-              <SplitCard split={{ id: "f1", transactionId: "t", totalAmount: 10000, myShare: 5000, splitNote: "Loading split...", settledAmount: 2000, settled: false, createdAt: new Date().toISOString() } as unknown as Split} currency={currency} isSettled={false} liveAccounts={liveAccounts} />
-              <SplitCard split={{ id: "f2", transactionId: "t", totalAmount: 10000, myShare: 5000, splitNote: "Loading split...", settledAmount: 2000, settled: false, createdAt: new Date().toISOString() } as unknown as Split} currency={currency} isSettled={false} liveAccounts={liveAccounts} />
-            </>
-          }
-        >
-          {splits.length === 0 ? (
-            <p className="muted center pad">No {tab} splits found.</p>
-          ) : (
-            splits.map((split) => (
+        {isLoading ? (
+          <div className="loading-dots-container">
+            <div className="loading-dots"><span /><span /><span /></div>
+          </div>
+        ) : splits.length === 0 ? (
+          <p className="muted center pad">No {tab} splits found.</p>
+        ) : (
+          <div className="fade-in">
+            {splits.map((split) => (
               <SplitCard key={split.id} split={split} currency={currency} isSettled={isSettled} liveAccounts={liveAccounts} />
-            ))
-          )}
-        </Skeleton>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -57,6 +52,7 @@ export function Splits() {
 
 function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split; currency: string; isSettled: boolean; liveAccounts: import("../lib/types").Account[] }) {
   const repaySplit = useRepaySplit();
+  const delayedRepayPending = useDelayedPending(repaySplit.isPending);
 
   const [showRepay, setShowRepay] = useState(false);
   const [amount, setAmount] = useState("");
@@ -135,7 +131,7 @@ function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split;
               <div className="row gap" style={{ marginTop: 12 }}>
                 <button className="btn btn-ghost grow" onClick={() => setShowRepay(false)}>Cancel</button>
                 <button className="btn btn-primary grow" onClick={handleRepay} disabled={repaySplit.isPending}>
-                  {repaySplit.isPending ? "Saving..." : "Save"}
+                  {delayedRepayPending ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>

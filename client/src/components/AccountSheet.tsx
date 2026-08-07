@@ -8,6 +8,8 @@ import { Icon, accountTypeIcon } from "../lib/icons";
 import { errMessage } from "../api/client";
 import { resolveThemeColor } from "../lib/colors";
 import type { Account, AccountType } from "../lib/types";
+import { useDelayedPending } from "../lib/useDelayedPending";
+import { CharCount } from "./CharCount";
 
 const TYPES: { key: AccountType; label: string; icon: string }[] = [
   { key: "bank", label: "Bank", icon: "bank" },
@@ -26,6 +28,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
   const symbol = currencySymbol(user?.currency);
   const save = useSaveAccount();
   const del = useDeleteAccount();
+  const delayedSavePending = useDelayedPending(save.isPending);
 
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
@@ -35,6 +38,8 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
   const [goalTarget, setGoalTarget] = useState("");
   const [archived, setArchived] = useState(false);
   const [error, setError] = useState("");
+
+  const canSubmit = name.trim().length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -60,7 +65,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
 
   function submit() {
     setError("");
-    if (!name.trim()) return setError("Give the account a name.");
+    if (!canSubmit) return setError("Give the account a name.");
     save.mutate(
       {
         id: editing?.id,
@@ -100,20 +105,27 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
                 <Icon name="trash" /> Delete
               </button>
             )}
-            <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending}>
-              {save.isPending ? "Saving…" : editing ? "Save changes" : "Create account"}
+            <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending || !canSubmit}>
+              {delayedSavePending ? "Saving…" : editing ? "Save changes" : "Create account"}
             </button>
           </div>
+          {!canSubmit && !save.isPending && (
+            <p className="field-hint">Give the account a name</p>
+          )}
         </div>
       }
     >
       <div className="field">
-        <label className="field-label">Name</label>
+        <div className="field-header">
+          <label className="field-label">Name</label>
+          <CharCount current={name.length} max={60} />
+        </div>
         <input
           className="input"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Bank ****7512"
+          maxLength={60}
           autoFocus
         />
       </div>
@@ -146,7 +158,7 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
             placeholder="0"
             value={openingBalance}
             onChange={(e) => {
-              const val = e.target.value.replace(/[^0-9.-]/g, "");
+              const val = e.target.value.replace(/[^0-9.]/g, "");
               const parts = val.split(".");
               setOpeningBalance(parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : val);
             }}

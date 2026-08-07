@@ -6,6 +6,8 @@ import { useSaveCategory, useDeleteCategory } from "../api/hooks";
 import { errMessage } from "../api/client";
 import { resolveThemeColor } from "../lib/colors";
 import type { Category, CategoryKind } from "../lib/types";
+import { useDelayedPending } from "../lib/useDelayedPending";
+import { CharCount } from "./CharCount";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#eab308", "#16a34a", "#0ea5e9", "#14b8a6", "#64748b"];
 
@@ -22,11 +24,15 @@ export function CategorySheet({
 }) {
   const save = useSaveCategory();
   const del = useDeleteCategory();
+  const delayedSavePending = useDelayedPending(save.isPending);
+
   const [name, setName] = useState("");
   const [kind, setKind] = useState<CategoryKind>(defaultKind);
   const [icon, setIcon] = useState("tag");
   const [color, setColor] = useState(COLORS[0]);
   const [error, setError] = useState("");
+
+  const canSubmit = name.trim().length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +51,7 @@ export function CategorySheet({
   }, [open, editing, defaultKind]);
 
   function submit() {
-    if (!name.trim()) return setError("Name the category.");
+    if (!canSubmit) return setError("Name the category.");
     save.mutate(
       { id: editing?.id, name: name.trim(), kind, icon, color },
       { onSuccess: () => onClose(), onError: (e) => setError(errMessage(e)) }
@@ -58,23 +64,28 @@ export function CategorySheet({
       onClose={onClose}
       title={editing ? "Edit category" : "New category"}
       footer={
-        <div className="row gap">
-          {editing && (
-            <button
-              className="btn btn-ghost-danger"
-              onClick={() => {
-                if (window.confirm("Are you sure you want to delete this category?")) {
-                  del.mutate(editing.id, { onSuccess: onClose, onError: (e) => setError(errMessage(e)) });
-                }
-              }}
-              disabled={del.isPending}
-            >
-              <Icon name="trash" /> Delete
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+          <div className="row gap">
+            {editing && (
+              <button
+                className="btn btn-ghost-danger"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this category?")) {
+                    del.mutate(editing.id, { onSuccess: onClose, onError: (e) => setError(errMessage(e)) });
+                  }
+                }}
+                disabled={del.isPending}
+              >
+                <Icon name="trash" /> Delete
+              </button>
+            )}
+            <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending || !canSubmit}>
+              {delayedSavePending ? "Saving…" : editing ? "Save" : "Create"}
             </button>
+          </div>
+          {!canSubmit && !save.isPending && (
+            <p className="field-hint">Name the category</p>
           )}
-          <button className="btn btn-primary grow" onClick={submit} disabled={save.isPending}>
-            {editing ? "Save" : "Create"}
-          </button>
         </div>
       }
     >
@@ -88,8 +99,18 @@ export function CategorySheet({
       </div>
 
       <div className="field">
-        <label className="field-label">Name</label>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Coffee" autoFocus />
+        <div className="field-header">
+          <label className="field-label">Name</label>
+          <CharCount current={name.length} max={40} />
+        </div>
+        <input
+          className="input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Coffee"
+          maxLength={40}
+          autoFocus
+        />
       </div>
 
       <div className="field">

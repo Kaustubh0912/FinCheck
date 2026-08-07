@@ -7,6 +7,7 @@ import { resolveThemeColor } from "../lib/colors";
 import { useAuth } from "../auth/AuthContext";
 import { errMessage } from "../api/client";
 import type { Account } from "../lib/types";
+import { useDelayedPending } from "../lib/useDelayedPending";
 
 interface Props {
   open: boolean;
@@ -20,6 +21,7 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
   const symbol = currencySymbol(user?.currency);
   const { data: accounts = [] } = useAccounts();
   const saveTxn = useSaveTransaction();
+  const delayedSavePending = useDelayedPending(saveTxn.isPending);
 
   const [amount, setAmount] = useState("");
   const [sourceAccountId, setSourceAccountId] = useState("");
@@ -42,11 +44,19 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
     }
   }, [open, otherAccounts, sourceAccountId]);
 
+  const numVal = Number(amount);
+  const canSubmit = !isNaN(numVal) && numVal > 0 && !!sourceAccountId;
+
+  function getMissingHint() {
+    if (!numVal || numVal <= 0) return "Enter an amount greater than zero";
+    if (!sourceAccountId) return `Select an account to ${mode === "add" ? "transfer from" : "withdraw to"}`;
+    return "";
+  }
+
   function submit() {
     setError("");
     const value = Number(amount);
-    if (!value || value <= 0) return setError("Enter an amount greater than zero.");
-    if (!sourceAccountId) return setError(`Select an account to ${mode === "add" ? "transfer from" : "withdraw to"}.`);
+    if (!canSubmit) return setError("Enter a valid amount and select an account.");
 
     if (mode === "add") {
       const sourceAcc = otherAccounts.find((a) => a.id === sourceAccountId);
@@ -79,9 +89,14 @@ export function GoalActionSheet({ open, onClose, goal, mode }: Props) {
       onClose={onClose}
       title={title}
       footer={
-        <button className="btn btn-primary grow" onClick={submit} disabled={saveTxn.isPending}>
-          {saveTxn.isPending ? "Processing..." : mode === "add" ? "Confirm Savings" : "Confirm Withdrawal"}
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+          <button className="btn btn-primary grow" onClick={submit} disabled={saveTxn.isPending || !canSubmit}>
+            {delayedSavePending ? "Processing..." : mode === "add" ? "Confirm Savings" : "Confirm Withdrawal"}
+          </button>
+          {!canSubmit && !saveTxn.isPending && (
+            <p className="field-hint">{getMissingHint()}</p>
+          )}
+        </div>
       }
     >
       <div className="goal-hero" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, margin: "10px 0 24px" }}>

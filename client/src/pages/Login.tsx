@@ -2,6 +2,17 @@ import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { Icon } from "../lib/icons";
 import { errMessage } from "../api/client";
+import { useDelayedPending } from "../lib/useDelayedPending";
+import { PasswordChecklist } from "../components/PasswordChecklist";
+
+function detectDefaultCurrency(): string {
+  if (typeof navigator === "undefined") return "INR";
+  const lang = navigator.language || "";
+  if (lang.startsWith("en-US")) return "USD";
+  if (lang.startsWith("en-GB")) return "GBP";
+  if (lang.includes("EUR") || lang.startsWith("de") || lang.startsWith("fr") || lang.startsWith("es") || lang.startsWith("it")) return "EUR";
+  return "INR";
+}
 
 export function Login({ hydrating }: { hydrating?: boolean }) {
   const { login, register } = useAuth();
@@ -9,22 +20,52 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [currency, setCurrency] = useState("INR");
+  const [currency, setCurrency] = useState(detectDefaultCurrency);
   const [error, setError] = useState("");
+  const [emailBlurError, setEmailBlurError] = useState("");
   const [busy, setBusy] = useState(false);
+  const delayedBusy = useDelayedPending(busy);
+
+  // Email format check
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValidPassword = mode === "register" ? password.length >= 8 && /[0-9]/.test(password) : password.length > 0;
+  const isValidName = mode === "login" || name.trim().length > 0;
+
+  const canSubmit = isValidEmail && isValidPassword && isValidName;
+
+  function validateEmailInline() {
+    if (email.trim() && !isValidEmail) {
+      setEmailBlurError("Please enter a valid email address");
+    } else {
+      setEmailBlurError("");
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setError("");
+    setEmailBlurError("");
     setBusy(true);
     try {
-      if (mode === "login") await login(email, password);
-      else await register(email, name, password, currency);
+      const cleanEmail = email.trim();
+      const cleanName = name.trim();
+      if (mode === "login") await login(cleanEmail, password);
+      else await register(cleanEmail, cleanName, password, currency);
     } catch (err) {
       setError(errMessage(err, "Could not sign in"));
     } finally {
       setBusy(false);
     }
+  }
+
+  function getMissingHint() {
+    if (!email.trim()) return "Enter your email address";
+    if (!isValidEmail) return "Enter a valid email address";
+    if (mode === "register" && !name.trim()) return "Enter your name";
+    if (!password) return "Enter your password";
+    if (mode === "register" && !isValidPassword) return "Meet all password requirements";
+    return "";
   }
 
   return (
@@ -38,10 +79,10 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
         </div>
 
         <div className="type-toggle">
-          <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
+          <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setEmailBlurError(""); }}>
             Log in
           </button>
-          <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>
+          <button className={mode === "register" ? "active" : ""} onClick={() => { setMode("register"); setError(""); setEmailBlurError(""); }}>
             Sign up
           </button>
         </div>
@@ -51,7 +92,14 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
             <>
               <div className="field">
                 <label className="field-label">Name</label>
-                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+                <input
+                  className="input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  maxLength={80}
+                  required
+                />
               </div>
               <div className="field">
                 <label className="field-label">Primary currency</label>
@@ -70,11 +118,13 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
               className="input"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); if (emailBlurError) setEmailBlurError(""); }}
+              onBlur={validateEmailInline}
               placeholder="you@example.com"
               autoComplete="email"
               required
             />
+            {emailBlurError && <p className="inline-error">{emailBlurError}</p>}
           </div>
           <div className="field">
             <label className="field-label">Password</label>
@@ -83,17 +133,24 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === "register" ? "At least 6 characters" : "Your password"}
+              placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
               autoComplete={mode === "register" ? "new-password" : "current-password"}
+              maxLength={200}
               required
             />
+            {mode === "register" && (
+              <PasswordChecklist password={password} />
+            )}
           </div>
 
           {error && <p className="form-error">{error}</p>}
 
-          <button className="btn btn-primary grow" disabled={busy}>
-            {busy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+          <button className="btn btn-primary grow" disabled={busy || !canSubmit}>
+            {delayedBusy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
           </button>
+          {!canSubmit && !busy && (
+            <p className="field-hint">{getMissingHint()}</p>
+          )}
         </form>
       </div>
     </div>

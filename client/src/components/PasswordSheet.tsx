@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
+import { useDelayedPending } from "../lib/useDelayedPending";
+import { PasswordChecklist } from "./PasswordChecklist";
 
 interface PasswordSheetProps {
   open: boolean;
@@ -29,6 +31,12 @@ export function PasswordSheet({
   changePassword,
 }: PasswordSheetProps) {
   const [localErr, setLocalErr] = useState("");
+  const delayedChanging = useDelayedPending(changingPassword);
+
+  const hasMinLength = newPassword.length >= 8;
+  const hasNumber = /[0-9]/.test(newPassword);
+  const matchesConfirm = confirmPassword.length > 0 && newPassword === confirmPassword;
+  const canSubmit = currentPassword.length > 0 && hasMinLength && hasNumber && matchesConfirm;
 
   useEffect(() => {
     if (!open) {
@@ -42,11 +50,23 @@ export function PasswordSheet({
 
   function submit() {
     setLocalErr("");
-    if (newPassword.length < 6) {
-      setLocalErr("New password must be at least 6 characters");
+    if (!hasMinLength || !hasNumber) {
+      setLocalErr("New password must be at least 8 characters and include a number");
+      return;
+    }
+    if (!matchesConfirm) {
+      setLocalErr("New passwords do not match");
       return;
     }
     changePassword();
+  }
+
+  function getMissingHint() {
+    if (!currentPassword) return "Enter your current password";
+    if (!hasMinLength || !hasNumber) return "Meet all password requirements";
+    if (!confirmPassword) return "Confirm your new password";
+    if (!matchesConfirm) return "Passwords do not match";
+    return "";
   }
 
   return (
@@ -55,13 +75,18 @@ export function PasswordSheet({
       onClose={onClose}
       title="Change Password"
       footer={
-        <div className="row gap">
-          <button className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-          <button className="btn btn-primary grow" onClick={submit} disabled={changingPassword}>
-            {changingPassword ? "Changing…" : "Change Password"}
-          </button>
+        <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+          <div className="row gap">
+            <button className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+            <button className="btn btn-primary grow" onClick={submit} disabled={changingPassword || !canSubmit}>
+              {delayedChanging ? "Changing…" : "Change Password"}
+            </button>
+          </div>
+          {!canSubmit && !changingPassword && (
+            <p className="field-hint">{getMissingHint()}</p>
+          )}
         </div>
       }
     >
@@ -74,6 +99,7 @@ export function PasswordSheet({
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           placeholder="Enter your current password"
+          maxLength={200}
           autoFocus
         />
       </div>
@@ -85,7 +111,13 @@ export function PasswordSheet({
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Enter new password (min 6 characters)"
+          placeholder="Enter new password (min 8 characters)"
+          maxLength={200}
+        />
+        <PasswordChecklist
+          password={newPassword}
+          confirmPassword={confirmPassword}
+          showConfirm={confirmPassword.length > 0}
         />
       </div>
 
@@ -97,6 +129,7 @@ export function PasswordSheet({
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Confirm your new password"
+          maxLength={200}
         />
       </div>
 

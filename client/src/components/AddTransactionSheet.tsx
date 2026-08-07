@@ -8,6 +8,8 @@ import { currencySymbol } from "../lib/format";
 import { resolveThemeColor } from "../lib/colors";
 import { errMessage } from "../api/client";
 import type { Transaction, TxnType } from "../lib/types";
+import { CharCount } from "./CharCount";
+import { useDelayedPending } from "../lib/useDelayedPending";
 
 interface Props {
   open: boolean;
@@ -37,6 +39,9 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   const deleteTxn = useDeleteTransaction();
   const createSplit = useCreateSplit();
 
+  const isSaving = saveTxn.isPending || createSplit.isPending;
+  const delayedSavePending = useDelayedPending(isSaving);
+
   const [type, setType] = useState<TxnType | "split">("expense");
   const [amount, setAmount] = useState("");
   const [myShare, setMyShare] = useState("");
@@ -56,6 +61,26 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
     () => categories.filter((c) => c.kind === (type === "income" ? "income" : "expense")),
     [categories, type]
   );
+
+  const numAmount = Number(amount);
+  const hasAmount = !isNaN(numAmount) && numAmount > 0;
+  const hasAccount =
+    type === "income" || type === "reimbursement"
+      ? !!toAccountId
+      : type === "expense" || type === "saving" || type === "split"
+      ? !!fromAccountId
+      : type === "transfer"
+      ? !!fromAccountId && !!toAccountId && fromAccountId !== toAccountId
+      : false;
+
+  const canSubmit = hasAmount && hasAccount;
+
+  function getMissingHint() {
+    if (!hasAmount) return "Enter an amount greater than zero";
+    if (type === "transfer" && fromAccountId === toAccountId) return "Select two different accounts";
+    if (!hasAccount) return "Select an account";
+    return "";
+  }
 
   // (Re)initialise the form when the sheet opens.
   useEffect(() => {
@@ -288,10 +313,13 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
                 <Icon name="trash" /> Delete
               </button>
             )}
-            <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending || createSplit.isPending}>
-              {saveTxn.isPending || createSplit.isPending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
+            <button className={`btn btn-primary ${accentClass} grow`} onClick={submit} disabled={saveTxn.isPending || createSplit.isPending || !canSubmit}>
+              {delayedSavePending ? "Saving…" : editing ? "Save changes" : "Add transaction"}
             </button>
           </div>
+          {!canSubmit && !isSaving && (
+            <p className="field-hint">{getMissingHint()}</p>
+          )}
           <div className="txn-shortcut-hints">
             <span><kbd>Alt</kbd>+<kbd>1‑4</kbd> Type</span>
             <span><kbd>Alt</kbd>+<kbd>S</kbd> Submit</span>
@@ -445,13 +473,17 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
 
       {/* Note */}
       <div className="field">
-        <label className="field-label">Note</label>
+        <div className="field-header">
+          <label className="field-label">Note</label>
+          <CharCount current={note.length} max={200} />
+        </div>
         <input
           type="text"
           className="input"
           placeholder="e.g. Lunch with team"
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          maxLength={200}
         />
       </div>
 

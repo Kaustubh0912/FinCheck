@@ -8,7 +8,6 @@ import { Dropdown } from "../components/Dropdown";
 import { Icon } from "../lib/icons";
 import { dayKey, formatDayHeading, formatMoney } from "../lib/format";
 import type { Transaction, TxnType } from "../lib/types";
-import { Skeleton } from "boneyard-js/react";
 
 const TYPE_FILTERS: { key: TxnType | "all"; label: string }[] = [
   { key: "all", label: "All" },
@@ -20,7 +19,6 @@ const TYPE_FILTERS: { key: TxnType | "all"; label: string }[] = [
 export function Transactions() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
-  const isBoneyard = typeof window !== "undefined" && (window as any).__BONEYARD_BUILD;
   const { data: accounts = [] } = useAccounts();
 
   const [type, setType] = useState<TxnType | "all">("all");
@@ -78,36 +76,15 @@ export function Transactions() {
         ]}
       />
 
-      <Skeleton
-        name="transactions-list"
-        loading={isLoading}
-        fixture={
-          <section className="day-group">
-            <div className="day-head">
-              <span>Today</span>
-              <span className="amt-expense">−100</span>
-            </div>
-            <div className="txn-list">
-              <TransactionItem 
-                txn={{ id: "fix1", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
-                currency={currency} 
-              />
-              <TransactionItem 
-                txn={{ id: "fix2", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
-                currency={currency} 
-              />
-              <TransactionItem 
-                txn={{ id: "fix3", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
-                currency={currency} 
-              />
-            </div>
-          </section>
-        }
-      >
-        {groups.length === 0 ? (
-          <p className="muted center pad">No transactions match this filter.</p>
-        ) : (
-          groups.map(([day, items]) => {
+      {isLoading ? (
+        <div className="loading-dots-container">
+          <div className="loading-dots"><span /><span /><span /></div>
+        </div>
+      ) : groups.length === 0 ? (
+        <p className="muted center pad">No transactions match this filter.</p>
+      ) : (
+        <div className="fade-in">
+          {groups.map(([day, items]) => {
             const dayTotal = items.reduce(
               (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : (t.type === "expense" || t.type === "saving" ? -t.amount : 0)),
               0
@@ -130,12 +107,12 @@ export function Transactions() {
                 </div>
               </section>
             );
-          })
-        )}
-      </Skeleton>
+          })}
+        </div>
+      )}
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
-      <ListsSheet open={listsOpen || isBoneyard} onClose={() => setListsOpen(false)} />
+      <ListsSheet open={listsOpen} onClose={() => setListsOpen(false)} />
     </div>
   );
 }

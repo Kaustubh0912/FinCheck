@@ -9,12 +9,10 @@ import { TransactionItem } from "../components/TransactionItem";
 import { AddTransactionSheet } from "../components/AddTransactionSheet";
 import { Sheet } from "../components/Sheet";
 import type { Transaction } from "../lib/types";
-import { Skeleton } from "boneyard-js/react";
 
 export function Dashboard() {
   const { user } = useAuth();
   const currency = user?.currency ?? "INR";
-  const isBoneyard = typeof window !== "undefined" && (window as any).__BONEYARD_BUILD;
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const range = useMemo(() => monthRange(monthDate), [monthDate]);
@@ -142,7 +140,7 @@ export function Dashboard() {
       </div>
 
       <Sheet
-        open={!!selectedCategoryId || isBoneyard}
+        open={!!selectedCategoryId}
         onClose={() => setSelectedCategoryId(null)}
         title={
           (() => {
@@ -160,32 +158,19 @@ export function Dashboard() {
           })()
         }
       >
-        <Skeleton 
-          name="dashboard-category-txns" 
-          loading={catLoading} 
-          fixture={
-            <div className="txn-list">
-              <TransactionItem 
-                txn={{ id: "fix1", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
-                currency={currency} 
-              />
-              <TransactionItem 
-                txn={{ id: "fix2", amount: 100, type: "expense", date: new Date().toISOString(), categoryId: null, fromAccountId: null, toAccountId: null, note: "Loading...", excludeFromBudget: false, createdAt: new Date().toISOString() } as unknown as Transaction} 
-                currency={currency} 
-              />
-            </div>
-          }
-        >
-          {categoryTransactions.length === 0 ? (
-            <p className="muted center pad">No transactions for this category in the selected month.</p>
-          ) : (
-            <div className="txn-list">
-              {categoryTransactions.map((t) => (
-                <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
-              ))}
-            </div>
-          )}
-        </Skeleton>
+        {catLoading ? (
+          <div className="loading-dots-container">
+            <div className="loading-dots"><span /><span /><span /></div>
+          </div>
+        ) : categoryTransactions.length === 0 ? (
+          <p className="muted center pad">No transactions for this category in the selected month.</p>
+        ) : (
+          <div className="txn-list fade-in">
+            {categoryTransactions.map((t) => (
+              <TransactionItem key={t.id} txn={t} currency={currency} onClick={() => setEditing(t)} />
+            ))}
+          </div>
+        )}
       </Sheet>
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />

@@ -7,15 +7,6 @@ import { applyTheme, getInitialTheme } from "./lib/theme";
 import App from "./App";
 import "./styles/global.css";
 
-import { configureBoneyard } from 'boneyard-js/react';
-import './bones/registry';
-
-configureBoneyard({
-  animate: 'shimmer',
-  color: 'var(--shade-2)',
-  darkColor: 'var(--shade-2)'
-});
-
 applyTheme(getInitialTheme());
 
 const queryClient = new QueryClient({
