@@ -709,6 +709,8 @@ a { color: inherit; text-decoration: none; }
 /* Desktop layout wrappers — transparent on mobile so the stack is untouched. */
 .dash-cols, .dash-main, .dash-aside, .settings-cards { display: contents; }
 .txn-shortcut-hints { display: none; }
+/* Keyboard shortcuts are a desktop-only interaction. */
+.shortcut-trigger, .shortcut-overlay { display: none; }
 
 /* ===== Tablet (still pill nav, slightly roomier) ===== */
 @media (min-width: 720px) {

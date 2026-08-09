@@ -12,5 +12,10 @@ describe('colors utilities', () => {
 
   it('resolveThemeColor returns default when null', () => {
     expect(resolveThemeColor(null)).toBe('var(--cat-slate)');
+    expect(resolveThemeColor(undefined)).toBe('var(--cat-slate)');
+  });
+
+  it('resolves palette colors case-insensitively', () => {
+    expect(resolveThemeColor('#6366F1')).toBe('var(--cat-indigo)');
   });
 });

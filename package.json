@@ -17,6 +17,8 @@
     "clean": "node scripts/clean.mjs",
     "typecheck": "npm run typecheck -w client && tsc -p server/tsconfig.json --noEmit",
     "test": "npm run test -w server && npm run test -w client",
+    "test:coverage": "npm run test:coverage -w client",
+    "coverage:check": "npm run coverage:check -w client",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
