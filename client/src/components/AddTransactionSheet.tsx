@@ -174,6 +174,8 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
       if (e.key !== "Enter" || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "BUTTON" || tag === "TEXTAREA") return;
+      // The success screen must not submit the just-completed transaction again.
+      if (success) return;
       if (saveTxn.isPending || createSplit.isPending) return;
       e.preventDefault();
       submit();
@@ -184,6 +186,8 @@ export function AddTransactionSheet({ open, onClose, editing }: Props) {
   }, [open, type, amount, fromAccountId, toAccountId, categoryId, date, note, excludeFromBudget, editing, splitMode, numPeople, myShare, saveTxn.isPending, createSplit.isPending, success]);
 
   function submit() {
+    // Protect against stale keyboard/button handlers after a successful save.
+    if (success) return;
     setError("");
     const value = Number(amount);
     if (!value || value <= 0) return setError("Enter an amount greater than zero.");
