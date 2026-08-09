@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -34,11 +34,32 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease -PversionCode=${{ github.run_number }}
+      - name: Run unit tests and build release APK
+        run: ./gradlew test assembleRelease -PversionCode=${{ github.run_number }}
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fincheck-android-apk-${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  release:
+    name: Publish Android release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: fincheck-android-apk-${{ github.run_number }}
+          path: android/app/build/outputs/apk/release
 
       - name: Publish to GitHub Releases
-        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}

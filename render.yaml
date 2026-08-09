@@ -9,9 +9,9 @@ services:
     runtime: node
     plan: free
     region: oregon
-    # --include=dev so build tools (vite, tsc, prisma) install even when
-    # NODE_ENV=production. Builds the API (tsc) + the client (vite build).
-    buildCommand: npm install --include=dev && npm run build
+    # --include=dev so build tools install even when NODE_ENV=production.
+    # npm ci keeps deployments reproducible from package-lock.json.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
     autoDeploy: true

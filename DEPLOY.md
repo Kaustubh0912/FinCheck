@@ -17,7 +17,7 @@ single URL and **no CORS** to configure.
 1. Push this repo to GitHub.
 2. In Render: **New → Blueprint**, pick the repo. It reads `render.yaml` and creates
    the `fincheck` web service. (Or **New → Web Service** and set the commands below.)
-   - **Build command:** `npm install --include=dev && npm run build`
+   - **Build command:** `npm ci --include=dev && npm run build`
    - **Start command:** `npm run start`
    - **Health check path:** `/api/health`
 3. In the service's **Environment**, set:
@@ -34,7 +34,7 @@ single URL and **no CORS** to configure.
 Use this if you specifically want the frontend on Vercel's CDN.
 
 ### Backend (Render Web Service)
-- **Build command:** `npm install --include=dev && npm run build -w server`
+- **Build command:** `npm ci --include=dev && npm run build -w server`
 - **Start command:** `npm run start`
 - **Health check path:** `/api/health`
 - **Env:** `DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`, and
