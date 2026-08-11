@@ -23,37 +23,24 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   }
   const todayEnd = new Date(todayStart.getTime() + 86400000);
 
-  const [accounts, incomeAgg, expenseAgg, todayExpenseAgg, byCategoryRaw, categories, investmentAgg] = await Promise.all([
+  const [accounts, incomeAgg, [spending], categories] = await Promise.all([
     accountsWithBalances(userId),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["income", "reimbursement"] }, date: dateRange } },
       { $group: { _id: null, amount: { $sum: "$amount" } } },
     ]),
     Transaction.aggregate([
-      { $match: { userId: userObjectId, type: "expense", date: dateRange, excludeFromBudget: { $ne: true } } },
+      { $match: { userId: userObjectId, date: { $gte: new Date(Math.min(from.getTime(), todayStart.getTime())), $lte: new Date(Math.max(to.getTime(), todayEnd.getTime())) } } },
       { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
-      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
-      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
-    ]),
-    Transaction.aggregate([
-      { $match: { userId: userObjectId, type: "expense", date: { $gte: todayStart, $lt: todayEnd }, excludeFromBudget: { $ne: true } } },
-      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
-      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
-      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
-    ]),
-    Transaction.aggregate([
-      { $match: { userId: userObjectId, type: "expense", date: dateRange, excludeFromBudget: { $ne: true } } },
-      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
-      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
-      { $group: { _id: "$categoryId", amount: { $sum: "$effectiveAmount" } } },
+      { $set: { effectiveAmount: { $ifNull: [{ $arrayElemAt: ["$_split.myShare", 0] }, "$amount"] } } },
+      { $facet: {
+        expense: [{ $match: { type: "expense", date: dateRange, excludeFromBudget: { $ne: true } } }, { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } }],
+        todayExpense: [{ $match: { type: "expense", date: { $gte: todayStart, $lt: todayEnd }, excludeFromBudget: { $ne: true } } }, { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } }],
+        byCategory: [{ $match: { type: "expense", date: dateRange, excludeFromBudget: { $ne: true } } }, { $group: { _id: "$categoryId", amount: { $sum: "$effectiveAmount" } } }],
+        investment: [{ $match: { type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: true } }, { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } }],
+      } },
     ]),
     Category.find({ userId }),
-    Transaction.aggregate([
-      { $match: { userId: userObjectId, type: { $in: ["expense", "saving"] }, date: dateRange, excludeFromBudget: true } },
-      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
-      { $addFields: { effectiveAmount: { $cond: { if: { $gt: [{ $size: "$_split" }, 0] }, then: { $arrayElemAt: ["$_split.myShare", 0] }, else: "$amount" } } } },
-      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
-    ]),
   ]);
 
   // Opening balance: mirror the exact same logic as accountsWithBalances()
@@ -85,8 +72,8 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   const outAfterMap = new Map(outflowAfter.map((r) => [r._id.toString(), r.amount ?? 0]));
 
   const catMap = new Map(categories.map((c) => [c.id, c.toJSON()]));
-  const byCategory = byCategoryRaw
-    .map((row) => {
+  const byCategory = (spending?.byCategory ?? [])
+    .map((row: { _id?: { toString(): string }; amount?: number }) => {
       const catIdStr = row._id?.toString();
       const cat = catIdStr ? catMap.get(catIdStr) : undefined;
       return {
@@ -97,7 +84,7 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
         amount: row.amount ?? 0,
       };
     })
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a: { amount: number }, b: { amount: number }) => b.amount - a.amount);
 
   const netWorth = accounts.filter((a) => !a.archived).reduce((sum, a) => sum + a.balance, 0);
   // Opening balance includes ALL accounts (even now-archived ones) because
@@ -112,9 +99,9 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     range: { from, to },
     netWorth,
     income: incomeAgg[0]?.amount ?? 0,
-    expense: expenseAgg[0]?.amount ?? 0,
-    todayExpense: todayExpenseAgg[0]?.amount ?? 0,
-    investment: investmentAgg[0]?.amount ?? 0,
+    expense: spending?.expense[0]?.amount ?? 0,
+    todayExpense: spending?.todayExpense[0]?.amount ?? 0,
+    investment: spending?.investment[0]?.amount ?? 0,
     openingBalance,
     closingBalance,
     byCategory,

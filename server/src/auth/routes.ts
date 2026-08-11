@@ -4,7 +4,7 @@ import rateLimit from "express-rate-limit";
 import { User } from "../db";
 import { loginSchema, registerSchema, changePasswordSchema, profileUpdateSchema, toMinor } from "../lib/validate";
 import { seedUserDefaults } from "../lib/seed";
-import { requireAuth, signToken, type AuthedRequest } from "./middleware";
+import { invalidateTokenVersionCache, requireAuth, signToken, type AuthedRequest } from "./middleware";
 
 export const authRouter = Router();
 
@@ -121,6 +121,7 @@ authRouter.patch("/me/password", requireAuth, async (req: AuthedRequest, res: Re
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const newTokenVersion = (user.tokenVersion ?? 0) + 1;
     await User.findByIdAndUpdate(req.userId, { passwordHash, tokenVersion: newTokenVersion });
+    invalidateTokenVersionCache(req.userId!);
     res.json({ message: "Password updated successfully" });
   } catch (err) {
     next(err);

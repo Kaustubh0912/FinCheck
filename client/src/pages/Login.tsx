@@ -14,7 +14,11 @@ function detectDefaultCurrency(): string {
   return "INR";
 }
 
-export function Login({ hydrating }: { hydrating?: boolean }) {
+export function Login({ hydrating, sessionError, onRetrySession }: {
+  hydrating?: boolean;
+  sessionError?: string | null;
+  onRetrySession?: () => void;
+}) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -77,6 +81,13 @@ export function Login({ hydrating }: { hydrating?: boolean }) {
           <h1>FinCheck</h1>
           <p className="muted">Track every rupee across your accounts.</p>
         </div>
+
+        {sessionError && (
+          <div className="form-error" role="alert">
+            <span>{sessionError}</span>
+            {onRetrySession && <button type="button" className="link" onClick={onRetrySession}>Retry session</button>}
+          </div>
+        )}
 
         <div className="type-toggle">
           <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setEmailBlurError(""); }}>

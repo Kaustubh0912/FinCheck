@@ -33,6 +33,20 @@ app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : { origin: fals
 
 app.use(express.json({ limit: "100kb" }));
 
+// Slow requests are the useful signal on a small instance. This stays quiet
+// for normal traffic but makes slow endpoint/database paths visible in Render.
+app.use((req, res, next) => {
+  const startedAt = process.hrtime.bigint();
+  res.on("finish", () => {
+    if (!req.path.startsWith("/api")) return;
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    if (durationMs >= 500) {
+      console.warn(`[fincheck] slow request ${req.method} ${req.originalUrl} ${res.statusCode} ${Math.round(durationMs)}ms`);
+    }
+  });
+  next();
+});
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 1000,

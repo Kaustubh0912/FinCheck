@@ -12,7 +12,7 @@ import { Budget } from "./pages/Budget";
 import { Icon } from "./lib/icons";
 
 export default function App() {
-  const { user, loading, hydrating } = useAuth();
+  const { user, hydrating, hydrationError, retryHydration } = useAuth();
 
   // Still verifying a stored token — show clean branded splash screen
   if (hydrating) {
@@ -27,12 +27,8 @@ export default function App() {
     );
   }
 
-  if (loading && !user) {
-    return <Login />;
-  }
-
   if (!user) {
-    return <Login />;
+    return <Login sessionError={hydrationError} onRetrySession={retryHydration} />;
   }
 
   return (

@@ -7,9 +7,17 @@ export const TOKEN_KEY = "fincheck_token";
 // backend by setting VITE_API_URL, e.g. https://fincheck.onrender.com/api
 const baseURL = import.meta.env.VITE_API_URL?.trim() || "/api";
 
-export const api = axios.create({ baseURL });
+// Render's Free instances can take close to a minute to wake after being idle.
+export const api = axios.create({
+  baseURL,
+  timeout: 75_000,
+  timeoutErrorMessage: "The server is taking longer than usual to respond. Please try again.",
+});
 
 api.interceptors.request.use((config) => {
+  if (import.meta.env.DEV) {
+    (config as typeof config & { metadata?: { startedAt: number } }).metadata = { startedAt: performance.now() };
+  }
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -18,7 +26,16 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (import.meta.env.DEV && res.config?.url) {
+      const startedAt = (res.config as typeof res.config & { metadata?: { startedAt: number } }).metadata?.startedAt;
+      if (startedAt) {
+        const duration = Math.round(performance.now() - startedAt);
+        if (duration >= 500) console.info(`[fincheck] ${res.config.method?.toUpperCase()} ${res.config.url} ${duration}ms`);
+      }
+    }
+    return res;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem(TOKEN_KEY);

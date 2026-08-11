@@ -46,7 +46,7 @@ const accountSchema = new Schema(
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Account" }
 );
-accountSchema.index({ userId: 1 });
+accountSchema.index({ userId: 1, order: 1, createdAt: 1 });
 export const Account = mongoose.models.Account || mongoose.model("Account", accountSchema);
 
 // Category Schema
@@ -79,6 +79,9 @@ const transactionSchema = new Schema(
   { timestamps: true, toJSON, toObject: toJSON, collection: "Transaction" }
 );
 transactionSchema.index({ userId: 1, date: -1 });
+transactionSchema.index({ userId: 1, type: 1, date: -1 });
+transactionSchema.index({ userId: 1, fromAccountId: 1, date: -1 });
+transactionSchema.index({ userId: 1, toAccountId: 1, date: -1 });
 
 transactionSchema.virtual("fromAccount", {
   ref: "Account",
@@ -116,7 +119,8 @@ const splitSchema = new Schema(
   },
   { timestamps: true, toJSON, toObject: toJSON, collection: "Split" }
 );
-splitSchema.index({ userId: 1 });
+splitSchema.index({ userId: 1, settled: 1, createdAt: -1 });
+splitSchema.index({ transactionId: 1 });
 
 splitSchema.virtual("transaction", {
   ref: "Transaction",
