@@ -5,6 +5,7 @@ build/
 *.local
 *.tsbuildinfo
 .vercel/
+coverage/
 
 # Logs
 *.log
