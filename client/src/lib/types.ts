@@ -33,6 +33,7 @@ export interface Account {
   archived: boolean;
   createdAt: string;
   balance: number; // minor units, computed by the server
+  periodBalance?: number; // minor units, computed for specific date range
   order: number;
 }
 

@@ -210,13 +210,13 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     margin: { left: M, right: M },
     theme: "plain",
     head: [["Account", "Type", "Balance"]],
-    body: accts.map((a) => [a.name, cap(a.type), money(a.balance, cur)]),
+    body: accts.map((a) => [a.name, cap(a.type), money(a.periodBalance ?? a.balance, cur)]),
     foot: [
       [
         // FIX 6: colspan on the label cell only goes to col 1 (not 2) so the
         // Balance column keeps its right-alignment on the footer total.
         { content: "Total (excluding savings)", colSpan: 2 },
-        money(accts.reduce((sum, a) => sum + a.balance, 0), cur),
+        money(accts.reduce((sum, a) => sum + (a.periodBalance ?? a.balance), 0), cur),
       ],
     ],
     headStyles,
@@ -247,7 +247,8 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
     goals.forEach((goal) => {
       checkPageBreak(48);
       const target = goal.goalTarget || 1;
-      const progress = Math.min(100, Math.max(0, (goal.balance / target) * 100));
+      const balance = goal.periodBalance ?? goal.balance;
+      const progress = Math.min(100, Math.max(0, (balance / target) * 100));
 
       const labelY = y;
       doc.setFont("helvetica", "bold");
@@ -263,7 +264,7 @@ export function buildReportDoc(opts: ReportOptions): jsPDF {
       doc.setFont("times", "bold");
       doc.setFontSize(10);
       doc.setTextColor(...INK);
-      doc.text(`${money(goal.balance, cur)} of ${money(target, cur)}`, pageW - M, labelY, { align: "right" });
+      doc.text(`${money(balance, cur)} of ${money(target, cur)}`, pageW - M, labelY, { align: "right" });
 
       // FIX 9: Increased gap between label and bar from 8 to 10pt so the bar
       // doesn't visually merge with the text baseline.

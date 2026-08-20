@@ -29,7 +29,7 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : { origin: false }));
+app.use(cors(allowedOrigins.length ? { origin: allowedOrigins } : { origin: true }));
 
 app.use(express.json({ limit: "100kb" }));
 
@@ -91,6 +91,7 @@ connectDb().then(() => {
   server = app.listen(env.port, () => {
      
     console.log(`[fincheck] API listening on http://localhost:${env.port} [${env.nodeEnv}]`);
+    console.log(`[fincheck] CORS origins: ${allowedOrigins.length ? allowedOrigins.join(", ") : "(any — CLIENT_ORIGIN not set)"}`);
   });
 });
 

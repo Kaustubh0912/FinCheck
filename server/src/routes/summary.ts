@@ -27,7 +27,9 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     accountsWithBalances(userId),
     Transaction.aggregate([
       { $match: { userId: userObjectId, type: { $in: ["income", "reimbursement"] }, date: dateRange } },
-      { $group: { _id: null, amount: { $sum: "$amount" } } },
+      { $lookup: { from: "Split", localField: "_id", foreignField: "transactionId", as: "_split" } },
+      { $set: { effectiveAmount: { $ifNull: [{ $arrayElemAt: ["$_split.myShare", 0] }, "$amount"] } } },
+      { $group: { _id: null, amount: { $sum: "$effectiveAmount" } } },
     ]),
     Transaction.aggregate([
       { $match: { userId: userObjectId, date: { $gte: new Date(Math.min(from.getTime(), todayStart.getTime())), $lte: new Date(Math.max(to.getTime(), todayEnd.getTime())) } } },
@@ -95,6 +97,11 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
   const closingBalance = accounts
     .reduce((sum, a) => sum + a.openingBalance + (inAfterMap.get(a.id) ?? 0) - (outAfterMap.get(a.id) ?? 0), 0);
 
+  const accountsWithPeriodBalances = accounts.map((a) => ({
+    ...a,
+    periodBalance: a.openingBalance + (inAfterMap.get(a.id) ?? 0) - (outAfterMap.get(a.id) ?? 0),
+  }));
+
   res.json({
     range: { from, to },
     netWorth,
@@ -105,6 +112,6 @@ summaryRouter.get("/", async (req: AuthedRequest, res) => {
     openingBalance,
     closingBalance,
     byCategory,
-    accounts,
+    accounts: accountsWithPeriodBalances,
   });
 });
