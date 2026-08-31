@@ -27,4 +27,36 @@ describe('Transactions routes', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
   });
+
+  it('GET /api/transactions filters by q, amountMin, amountMax', async () => {
+    const user = await createTestUser('txnsearch@test.com', 'Search User');
+    const acc = await createTestAccount(user.id);
+    const cat = await createTestCategory(user.id);
+
+    await request(testApp)
+      .post('/api/transactions')
+      .set(authHeader(user.id))
+      .send({ type: 'expense', amount: 50, note: 'Starbucks Coffee', fromAccountId: acc.id, categoryId: cat.id });
+
+    await request(testApp)
+      .post('/api/transactions')
+      .set(authHeader(user.id))
+      .send({ type: 'expense', amount: 500, note: 'Supermarket Grocery', fromAccountId: acc.id, categoryId: cat.id });
+
+    // Search by q
+    const res1 = await request(testApp)
+      .get('/api/transactions?q=coffee')
+      .set(authHeader(user.id));
+    expect(res1.status).toBe(200);
+    expect(res1.body.length).toBe(1);
+    expect(res1.body[0].note).toBe('Starbucks Coffee');
+
+    // Filter by amountMin & amountMax (in minor units: 5000 is 50, 50000 is 500)
+    const res2 = await request(testApp)
+      .get('/api/transactions?amountMin=10000&amountMax=60000')
+      .set(authHeader(user.id));
+    expect(res2.status).toBe(200);
+    expect(res2.body.length).toBe(1);
+    expect(res2.body[0].note).toBe('Supermarket Grocery');
+  });
 });

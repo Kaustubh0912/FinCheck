@@ -95,8 +95,11 @@ export function AccountSheet({ open, onClose, editing }: { open: boolean; onClos
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
           {editing && (
-            <div style={{ fontSize: "0.85rem", padding: "8px", background: "var(--expense-soft)", color: "var(--expense)", borderRadius: "6px", border: "1px solid var(--expense-soft)", textAlign: "left" }}>
-              <strong>Warning:</strong> Deleting an account will orphan all its transactions. Unless it was created by mistake, archiving is strongly recommended.
+            <div className="sheet-alert-banner danger">
+              <Icon name="warning" className="sheet-alert-banner-icon" />
+              <div>
+                <strong>Warning:</strong> Deleting an account will orphan all its transactions. Unless it was created by mistake, archiving is strongly recommended.
+              </div>
             </div>
           )}
           <div className="row gap">

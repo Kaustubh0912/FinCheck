@@ -1,4 +1,5 @@
 import React, { Component, ReactNode } from "react";
+import { Icon } from "../lib/icons";
 
 interface Props {
   children?: ReactNode;
@@ -25,16 +26,26 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: "40px 20px", textAlign: "center", fontFamily: "var(--font)", color: "var(--ink)" }}>
-          <h2 style={{ fontFamily: "var(--serif)", marginBottom: "16px", color: "var(--expense)" }}>Something went wrong.</h2>
-          <p className="muted">An unexpected error occurred in the application.</p>
-          <button 
-            className="btn btn-primary" 
-            style={{ marginTop: "24px" }}
-            onClick={() => window.location.reload()}
-          >
-            Reload Page
-          </button>
+        <div className="auth-page">
+          <div className="auth-card animate-pop" style={{ textAlign: "center" }}>
+            <div className="auth-brand">
+              <div className="splash-logo" style={{ background: "var(--expense-soft)", color: "var(--expense)" }}>
+                <Icon name="warning" />
+              </div>
+              <h1 className="serif">Something went wrong</h1>
+              <p className="muted" style={{ fontSize: "0.9rem" }}>
+                An unexpected error occurred. Your saved records and local state remain safe.
+              </p>
+            </div>
+            <div className="row gap" style={{ marginTop: "20px" }}>
+              <button
+                className="btn btn-primary grow"
+                onClick={() => window.location.reload()}
+              >
+                <Icon name="rotate" /> Reload Application
+              </button>
+            </div>
+          </div>
         </div>
       );
     }

@@ -202,12 +202,24 @@ export function Settings() {
         <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile || !name.trim()}>
           {delayedSavingProfile ? "Saving…" : "Save profile"}
         </button>
-        {profileMsg && <span className={profileMsg === "Saved" ? "text-success save-msg" : "form-error save-msg"} style={{ display: "inline-block", marginTop: "8px" }}>{profileMsg}</span>}
-        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
-          <p className="field-label" style={{ marginBottom: 10 }}>Password</p>
-          <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
-            <Icon name="lock" /> Change password
-          </button>
+        {profileMsg && (
+          <p className={profileMsg === "Saved" ? "form-success" : "form-error"}>
+            {profileMsg}
+          </p>
+        )}
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Security</h2>
+        <div className="field">
+          <p className="muted" style={{ fontSize: "0.88rem" }}>
+            Keep your account secure by maintaining a strong password.
+          </p>
+          <div>
+            <button className="btn btn-ghost" onClick={() => setPasswordSheetOpen(true)}>
+              <Icon name="lock" /> Change password
+            </button>
+          </div>
         </div>
       </section>
 

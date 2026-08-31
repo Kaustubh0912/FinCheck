@@ -14,13 +14,14 @@ import {
   faChevronLeft, faChevronRight, faChevronDown, faCheck, faArrowTrendUp, faArrowTrendDown, faIndianRupeeSign,
   faMagnifyingGlass, faLock, faGripVertical, faMinus, faCircleCheck, faCircleXmark,
   faArrowUp, faArrowDown, faScissors, faEquals, faSliders, faKeyboard,
+  faRotateRight, faTriangleExclamation, faCircleExclamation, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Every icon the app can render, keyed by a short stable slug. */
 const ICONS: Record<string, IconDefinition> = {
   // accounts / money
   bank: faBuildingColumns, cash: faMoneyBillWave, card: faCreditCard, wallet: faWallet,
-  invest: faChartLine, box: faBox, piggy: faPiggyBank, money: faMoneyBill,
+  invest: faChartLine, "chart-line": faChartLine, box: faBox, piggy: faPiggyBank, money: faMoneyBill,
   sack: faSackDollar, coins: faCoins, building: faBuilding, briefcase: faBriefcase,
   // expense / income categories
   utensils: faUtensils, cart: faCartShopping, car: faCar, bag: faBagShopping,
@@ -37,8 +38,10 @@ const ICONS: Record<string, IconDefinition> = {
   "trend-up": faArrowTrendUp, "trend-down": faArrowTrendDown, rupee: faIndianRupeeSign,
   search: faMagnifyingGlass, lock: faLock, "grip-vertical": faGripVertical, minus: faMinus,
   "circle-check": faCircleCheck, "circle-xmark": faCircleXmark,
+  warning: faTriangleExclamation, "alert-circle": faCircleExclamation, info: faCircleInfo,
   "arrow-up": faArrowUp, "arrow-down": faArrowDown, "arrow-right-arrow-left": faArrowRightArrowLeft,
   scissors: faScissors, equals: faEquals, sliders: faSliders, keyboard: faKeyboard,
+  rotate: faRotateRight, refresh: faRotateRight,
 };
 /* eslint-disable react-refresh/only-export-components */
 

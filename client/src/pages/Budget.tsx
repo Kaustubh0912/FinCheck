@@ -57,16 +57,20 @@ export function Budget() {
     const pctMonthlyBudget = (enteredAmountInMinorUnits / monthlyBudget) * 100;
 
     let verdict = "";
+    let verdictIcon = "circle-check";
     let verdictClass = "";
 
     if (newLeftToday >= 0 && newMonthLeft >= 0 && pctMonthlyBudget < 15) {
-      verdict = "✅ Yes, you can afford this";
+      verdict = "Yes, you can afford this";
+      verdictIcon = "circle-check";
       verdictClass = "green";
     } else if (newMonthLeft >= 0 && (newLeftToday < 0 || pctMonthlyBudget >= 15)) {
-      verdict = "⚠️ Afford it, but it'll cost you";
+      verdict = "Afford it, but it'll cost you";
+      verdictIcon = "warning";
       verdictClass = "amber";
     } else {
-      verdict = "❌ This would put you over budget";
+      verdict = "This would put you over budget";
+      verdictIcon = "circle-xmark";
       verdictClass = "red";
     }
 
@@ -113,7 +117,8 @@ export function Budget() {
     return (
       <div className="consequence-panel">
         <div className={`verdict-banner ${verdictClass}`}>
-          {verdict}
+          <Icon name={verdictIcon} />
+          <span>{verdict}</span>
         </div>
         
         <div className="consequence-row">

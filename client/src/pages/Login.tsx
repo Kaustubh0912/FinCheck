@@ -83,9 +83,26 @@ export function Login({ hydrating, sessionError, onRetrySession }: {
         </div>
 
         {sessionError && (
-          <div className="form-error" role="alert">
-            <span>{sessionError}</span>
-            {onRetrySession && <button type="button" className="link" onClick={onRetrySession}>Retry session</button>}
+          <div className="auth-session-banner" role="alert">
+            <div className="auth-session-banner-header">
+              <div className="auth-session-banner-icon">
+                <Icon name="rotate" />
+              </div>
+              <div className="auth-session-banner-body">
+                <div className="auth-session-banner-title">Saved session found</div>
+                <div className="auth-session-banner-desc">{sessionError}</div>
+              </div>
+            </div>
+            {onRetrySession && (
+              <button
+                type="button"
+                className="btn-session-retry"
+                onClick={onRetrySession}
+              >
+                <Icon name="rotate" />
+                <span>Retry session</span>
+              </button>
+            )}
           </div>
         )}
 

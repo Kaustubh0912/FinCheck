@@ -86,7 +86,7 @@ export function Transactions() {
         <div className="fade-in">
           {groups.map(([day, items]) => {
             const dayTotal = items.reduce(
-              (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : (t.type === "expense" || t.type === "saving" ? -t.amount : 0)),
+              (sum, t) => sum + (t.type === "income" || t.type === "reimbursement" ? t.amount : t.type === "expense" ? -t.amount : 0),
               0
             );
             return (
@@ -112,7 +112,7 @@ export function Transactions() {
       )}
 
       <AddTransactionSheet open={!!editing} editing={editing ?? undefined} onClose={() => setEditing(null)} />
-      <ListsSheet open={listsOpen} onClose={() => setListsOpen(false)} />
+      <ListsSheet open={listsOpen} onClose={() => setListsOpen(false)} onEdit={(t) => setEditing(t)} />
     </div>
   );
 }

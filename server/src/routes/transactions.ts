@@ -28,7 +28,7 @@ async function assertOwnership(
 
 transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
   try {
-    const { from, to, accountId, type, categoryId, limit, skip } = req.query as Record<string, string>;
+    const { from, to, accountId, type, categoryId, q, amountMin, amountMax, limit, skip } = req.query as Record<string, string>;
     const where: Record<string, any> = { userId: req.userId };
     if (type && ["income", "expense", "transfer", "saving", "reimbursement"].includes(type)) where.type = type;
     if (categoryId) {
@@ -42,6 +42,22 @@ transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
         return res.status(400).json({ error: "Invalid account ID" });
       }
       where.$or = [{ fromAccountId: accountId }, { toAccountId: accountId }];
+    }
+    if (q && typeof q === "string" && q.trim()) {
+      const sanitized = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      where.note = { $regex: sanitized, $options: "i" };
+    }
+    if (amountMin !== undefined || amountMax !== undefined) {
+      where.amount = {};
+      if (amountMin !== undefined && amountMin !== "" && !isNaN(Number(amountMin))) {
+        where.amount.$gte = Number(amountMin);
+      }
+      if (amountMax !== undefined && amountMax !== "" && !isNaN(Number(amountMax))) {
+        where.amount.$lte = Number(amountMax);
+      }
+      if (Object.keys(where.amount).length === 0) {
+        delete where.amount;
+      }
     }
     if (from || to) {
       where.date = {};

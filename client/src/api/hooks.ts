@@ -101,6 +101,9 @@ export interface TxnFilters {
   accountId?: string;
   type?: string;
   categoryId?: string;
+  q?: string;
+  amountMin?: number;
+  amountMax?: number;
   limit?: number;
 }
 

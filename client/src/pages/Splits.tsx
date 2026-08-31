@@ -91,8 +91,19 @@ function SplitCard({ split, currency, isSettled, liveAccounts }: { split: Split;
         <div className="goal-fill" style={{ width: `${progress}%`, backgroundColor: "var(--accent)" }} />
       </div>
 
-      <div className="goal-meta">
-        <span>Total bill <span className="serif">{formatMoney(split.totalAmount, currency)}</span> · Your share <span className="serif">{formatMoney(split.myShare, currency)}</span> · Owed to you <span className="serif">{formatMoney(totalOwed, currency)}</span></span>
+      <div className="split-meta-grid">
+        <span className="split-meta-item">
+          <span className="split-meta-label">Total bill</span>
+          <span className="split-meta-val">{formatMoney(split.totalAmount, currency)}</span>
+        </span>
+        <span className="split-meta-item">
+          <span className="split-meta-label">Your share</span>
+          <span className="split-meta-val">{formatMoney(split.myShare, currency)}</span>
+        </span>
+        <span className="split-meta-item">
+          <span className="split-meta-label">Owed to you</span>
+          <span className="split-meta-val">{formatMoney(totalOwed, currency)}</span>
+        </span>
       </div>
 
       {!isSettled && (

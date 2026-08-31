@@ -202,9 +202,12 @@ export function Accounts() {
         <>
           <div className="account-list">{goals.map(goalCard)}</div>
           {goals.length === 0 && (
-            <div className="center pad">
-              <p className="muted">No goals set yet.</p>
-              <p className="muted" style={{ fontSize: '0.85rem', marginTop: 8 }}>
+            <div className="empty-state-card">
+              <div className="empty-state-icon">
+                <Icon name="piggy" />
+              </div>
+              <h3 className="empty-state-title serif">No savings goals yet</h3>
+              <p className="muted" style={{ fontSize: "0.85rem", maxWidth: 300, margin: "6px auto 0" }}>
                 Edit an account to set a target balance and track your progress here.
               </p>
             </div>
