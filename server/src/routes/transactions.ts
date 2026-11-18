@@ -72,14 +72,19 @@ transactionsRouter.get("/", async (req: AuthedRequest, res, next) => {
     }
     const take = limit ? Math.min(Number(limit), 1000) : 1000;
     const skipCount = skip ? Number(skip) : 0;
-    const transactions = await Transaction.find(where)
-      .sort({ date: -1, createdAt: -1 })
-      .skip(skipCount)
-      .limit(take)
-      .populate("fromAccount", "id name icon color")
-      .populate("toAccount", "id name icon color")
-      .populate("category", "id name icon color kind");
-    
+    const [total, transactions] = await Promise.all([
+      Transaction.countDocuments(where),
+      Transaction.find(where)
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skipCount)
+        .limit(take)
+        .populate("fromAccount", "id name icon color")
+        .populate("toAccount", "id name icon color")
+        .populate("category", "id name icon color kind"),
+    ]);
+
+    res.setHeader("X-Total-Count", total.toString());
+    res.setHeader("Access-Control-Expose-Headers", "X-Total-Count");
     res.json(transactions);
   } catch (err) {
     next(err);

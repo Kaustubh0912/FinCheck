@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 import type { Account, Category, Summary, Transaction, TransactionInput } from "../lib/types";
 
@@ -113,6 +113,39 @@ export function useTransactions(filters: TxnFilters = {}, enabled = true) {
     queryFn: async () => {
       const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined && v !== ""));
       return (await api.get<Transaction[]>("/transactions", { params })).data;
+    },
+    enabled,
+  });
+}
+
+export interface InfiniteTxnFilters extends Omit<TxnFilters, "limit"> {
+  limit?: number;
+}
+
+export function useInfiniteTransactions(filters: InfiniteTxnFilters = {}, pageSize = 40, enabled = true) {
+  return useInfiniteQuery({
+    queryKey: ["transactions", "infinite", filters, pageSize],
+    queryFn: async ({ pageParam = 0 }) => {
+      const params = Object.fromEntries(
+        Object.entries({ ...filters, limit: pageSize, skip: pageParam }).filter(
+          ([, v]) => v !== undefined && v !== ""
+        )
+      );
+      const res = await api.get<Transaction[]>("/transactions", { params });
+      const totalHeader = res.headers["x-total-count"];
+      const totalCount = totalHeader ? parseInt(totalHeader, 10) : undefined;
+      return {
+        items: res.data,
+        skip: pageParam as number,
+        totalCount: isNaN(totalCount as number) ? undefined : totalCount,
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.items.length < pageSize) return undefined;
+      const nextSkip = allPages.reduce((acc, p) => acc + p.items.length, 0);
+      if (lastPage.totalCount !== undefined && nextSkip >= lastPage.totalCount) return undefined;
+      return nextSkip;
     },
     enabled,
   });

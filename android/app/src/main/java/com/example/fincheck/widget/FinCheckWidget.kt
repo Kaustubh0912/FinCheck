@@ -61,6 +61,7 @@ class FinCheckWidget : AppWidgetProvider() {
         ) {
             val prefs = WidgetPrefs(context)
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
+            views.setProgressBar(R.id.widget_spending_progress, 100, 0, false)
 
             if (prefs.jwtToken == null) {
                 views.setTextViewText(R.id.widget_net_worth, "Tap to setup")
@@ -108,6 +109,14 @@ class FinCheckWidget : AppWidgetProvider() {
                                 
                                 val limitStr = format.format(todaysBudget / 100.0)
                                 views.setTextViewText(R.id.widget_daily_limit, limitStr)
+                                val spendingProgress = if (todaysBudget > 0) {
+                                    ((data.todayExpense.toDouble() / todaysBudget) * 100).toInt().coerceIn(0, 100)
+                                } else if (data.todayExpense > 0) {
+                                    100
+                                } else {
+                                    0
+                                }
+                                views.setProgressBar(R.id.widget_spending_progress, 100, spendingProgress, false)
                             } else {
                                 views.setTextViewText(R.id.widget_daily_limit, "--")
                             }
