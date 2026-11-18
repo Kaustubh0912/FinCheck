@@ -38,7 +38,11 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
   const paceDiff = Math.abs(expense - expectedSpend);
 
   return (
-    <section className="card budget-widget">
+    <section
+      className="card budget-widget"
+      data-status={isDangerToday ? "danger" : "safe"}
+      data-pace={isOverPace ? "over" : "under"}
+    >
       <h2 className="card-title">Allowance</h2>
 
       <div className="budget-hero">
@@ -46,22 +50,26 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
           {formatMoney(todaysBudget, currency)}
           <span className="budget-per-day muted"> / day</span>
         </div>
-        <span className="date-hint" style={{ marginTop: 2 }}>{daysLeft} days left in {now.toLocaleString('default', { month: 'long' })}</span>
+        <span className="date-hint">{daysLeft} days left in {now.toLocaleString('default', { month: 'long' })}</span>
       </div>
 
-      <div className="bd-track">
-        <div 
-          className="bd-fill" 
-          style={{ 
-            width: `${pctSpentToday}%`, 
-            backgroundColor: isDangerToday ? "var(--expense)" : "var(--income)" 
-          }} 
-        />
-      </div>
+      <meter
+        className="budget-meter"
+        min={0}
+        max={Math.max(1, todaysBudget)}
+        value={Math.min(todayExpense, Math.max(1, todaysBudget))}
+        low={todaysBudget * 0.75}
+        high={todaysBudget}
+        optimum={0}
+        aria-label="Daily spending allowance"
+        aria-valuetext={`${formatMoney(todayExpense, currency)} spent of ${formatMoney(todaysBudget, currency)} daily allowance${isDangerToday ? `, ${formatMoney(Math.abs(leftToday), currency)} over budget` : `, ${formatMoney(leftToday, currency)} left`}`}
+      >
+        {pctSpentToday}%
+      </meter>
 
-      <div className="budget-meta" style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <div className="budget-meta budget-meta-split">
         <span>
-          <span style={{ fontWeight: 500 }}>{formatMoney(todayExpense, currency)}</span> spent today
+          <span className="budget-spent-val">{formatMoney(todayExpense, currency)}</span> spent today
         </span>
         {isDangerToday ? (
           <span className="amt-expense">
@@ -74,7 +82,7 @@ export function BudgetWidget({ expense, todayExpense, monthlyBudget }: BudgetWid
         )}
       </div>
 
-      <div className="budget-meta" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--line-light)' }}>
+      <div className="budget-meta budget-pace">
         {isOverPace ? (
           <span className="amt-expense">
             At this rate you&apos;ll overspend by {formatMoney((expense / daysElapsed) * totalDays - monthlyBudget, currency)} this month

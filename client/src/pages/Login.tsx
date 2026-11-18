@@ -119,19 +119,22 @@ export function Login({ hydrating, sessionError, onRetrySession }: {
           {mode === "register" && (
             <>
               <div className="field">
-                <label className="field-label">Name</label>
+                <label className="field-label" htmlFor="login-name">Name</label>
                 <input
+                  id="login-name"
+                  name="name"
                   className="input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   maxLength={80}
+                  autoComplete="name"
                   required
                 />
               </div>
               <div className="field">
-                <label className="field-label">Primary currency</label>
-                <select className="input select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                <label className="field-label" htmlFor="login-currency">Primary currency</label>
+                <select id="login-currency" name="currency" className="input select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                   <option value="INR">₹ Indian Rupee (INR)</option>
                   <option value="USD">$ US Dollar (USD)</option>
                   <option value="EUR">€ Euro (EUR)</option>
@@ -141,8 +144,10 @@ export function Login({ hydrating, sessionError, onRetrySession }: {
             </>
           )}
           <div className="field">
-            <label className="field-label">Email</label>
+            <label className="field-label" htmlFor="login-email">Email</label>
             <input
+              id="login-email"
+              name="email"
               className="input"
               type="email"
               value={email}
@@ -150,13 +155,20 @@ export function Login({ hydrating, sessionError, onRetrySession }: {
               onBlur={validateEmailInline}
               placeholder="you@example.com"
               autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={!!emailBlurError}
+              aria-describedby={emailBlurError ? "login-email-error" : undefined}
               required
             />
-            {emailBlurError && <p className="inline-error">{emailBlurError}</p>}
+            {emailBlurError && <p id="login-email-error" className="inline-error" role="alert">{emailBlurError}</p>}
           </div>
           <div className="field">
-            <label className="field-label">Password</label>
+            <label className="field-label" htmlFor="login-password">Password</label>
             <input
+              id="login-password"
+              name="password"
               className="input"
               type="password"
               value={password}
@@ -173,11 +185,11 @@ export function Login({ hydrating, sessionError, onRetrySession }: {
 
           {error && <p className="form-error">{error}</p>}
 
-          <button className="btn btn-primary grow" disabled={busy || !canSubmit}>
+          <button className="btn btn-primary grow" disabled={busy}>
             {delayedBusy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
           </button>
           {!canSubmit && !busy && (
-            <p className="field-hint">{getMissingHint()}</p>
+            <p className="field-hint" aria-live="polite">{getMissingHint()}</p>
           )}
         </form>
       </div>

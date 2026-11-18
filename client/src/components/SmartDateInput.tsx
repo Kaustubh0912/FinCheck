@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { friendlyDate, parseSmartDate, toYmd } from "../lib/date";
 
 /** A text date field that parses shorthand (1.1.26, 1 jan, 21, t) and snaps to a clean date. */
@@ -6,6 +6,7 @@ export function SmartDateInput({ value, onChange }: { value: string; onChange: (
   const [text, setText] = useState(() => friendlyDate(value));
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState(false);
+  const lastCompositionEndAt = useRef<number | null>(null);
 
   // Resync when the value changes externally (sheet opened / editing a txn),
   // but leave the user's in-progress text alone if it already matches.
@@ -63,8 +64,18 @@ export function SmartDateInput({ value, onChange }: { value: string; onChange: (
           e.target.select();
         }}
         onBlur={handleBlur}
+        onCompositionEnd={(e) => {
+          lastCompositionEndAt.current = e.nativeEvent.timeStamp;
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
+            // Enter confirms IME candidates. Safari can deliver compositionend
+            // before this keydown, so also check the native event timestamps.
+            if (
+              e.nativeEvent.isComposing ||
+              (lastCompositionEndAt.current !== null &&
+                Math.abs(e.nativeEvent.timeStamp - lastCompositionEndAt.current) < 50)
+            ) return;
             e.preventDefault();
             (e.target as HTMLInputElement).blur();
           }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useSummary } from "../api/hooks";
 import { formatMoney, monthRange, currencySymbol, monthLabel } from "../lib/format";
@@ -18,6 +18,7 @@ export function Budget() {
   
   const [checkAmount, setCheckAmount] = useState("");
   const [showConsequence, setShowConsequence] = useState(false);
+  const lastCompositionEndAt = useRef<number | null>(null);
 
   const handleCheck = () => {
     const amt = parseFloat(checkAmount);
@@ -198,7 +199,19 @@ export function Budget() {
               setCheckAmount(e.target.value);
               setShowConsequence(false);
             }}
-            onKeyDown={(e) => { if (e.key === "Enter") handleCheck(); }}
+            onCompositionEnd={(e) => {
+              lastCompositionEndAt.current = e.nativeEvent.timeStamp;
+            }}
+            onKeyDown={(e) => {
+              if (
+                e.key !== "Enter" ||
+                e.nativeEvent.isComposing ||
+                (lastCompositionEndAt.current !== null &&
+                  Math.abs(e.nativeEvent.timeStamp - lastCompositionEndAt.current) < 50)
+              ) return;
+              e.preventDefault();
+              handleCheck();
+            }}
             style={{ fontSize: "1.25rem" }}
           />
           <button className="btn btn-pill sm" onClick={handleCheck} style={{ marginLeft: 8, flexShrink: 0 }}>

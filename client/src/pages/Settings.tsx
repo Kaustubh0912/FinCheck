@@ -175,29 +175,32 @@ export function Settings() {
         <h2 className="card-title">Profile</h2>
         <div className="field">
           <div className="field-header">
-            <label className="field-label">Name</label>
+            <label className="field-label" htmlFor="settings-name">Name</label>
             <CharCount current={name.length} max={80} />
           </div>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+          <input id="settings-name" name="name" className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoComplete="name" />
         </div>
         <div className="field">
-          <label className="field-label">Email</label>
-          <input className="input" value={user?.email ?? ""} disabled />
+          <label className="field-label" htmlFor="settings-email">Email</label>
+          <input id="settings-email" name="email" className="input" value={user?.email ?? ""} disabled />
         </div>
         <div className="field">
-          <label className="field-label">Monthly budget</label>
+          <label className="field-label" htmlFor="settings-budget">Monthly budget</label>
           <div className="amount-field small">
             <span className="amount-symbol">{currencySymbol(user?.currency)}</span>
             <input
+              id="settings-budget"
+              name="monthlyBudget"
               type="number"
               inputMode="decimal"
               placeholder="0"
               value={budgetInput}
               onChange={(e) => setBudgetInput(e.target.value)}
               style={{ fontSize: "1.25rem" }}
+              aria-describedby="settings-budget-hint"
             />
           </div>
-          <p className="date-hint">Your total spending limit for the month.</p>
+          <p id="settings-budget-hint" className="date-hint">Your total spending limit for the month.</p>
         </div>
         <button className="btn btn-primary" onClick={() => saveProfile()} disabled={savingProfile || !name.trim()}>
           {delayedSavingProfile ? "Saving…" : "Save profile"}

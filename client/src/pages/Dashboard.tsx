@@ -87,18 +87,12 @@ export function Dashboard() {
               <h2 className="card-title">Where it went</h2>
               <div className="breakdown">
                 {cats.map((c) => (
-                  <div
+                  <button
+                    type="button"
                     className={`bd-row${selectedCategoryId === c.categoryId ? " active" : ""}`}
                     key={c.categoryId ?? c.name}
                     onClick={() => setSelectedCategoryId(c.categoryId ?? null)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedCategoryId(c.categoryId ?? null);
-                      }
-                    }}
+                    aria-pressed={selectedCategoryId === c.categoryId}
                   >
                     <div className="bd-head">
                       <span className="bd-name">
@@ -111,7 +105,7 @@ export function Dashboard() {
                     <div className="bd-track">
                       <div className="bd-fill" style={{ width: `${(c.amount / maxAmt) * 100}%` }} />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>

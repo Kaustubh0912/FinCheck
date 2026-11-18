@@ -11,8 +11,11 @@ export function getInitialTheme(): Theme {
 
 export function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute("data-theme", theme);
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", theme === "dark" ? "#15140f" : "#f5f2eb");
+  document.documentElement.style.colorScheme = theme;
+  const metas = document.querySelectorAll('meta[name="theme-color"]');
+  metas.forEach((meta) => {
+    meta.setAttribute("content", theme === "dark" ? "#15140f" : "#fcfaf8");
+  });
 }
 
 export function useTheme(): [Theme, (t: Theme) => void] {
