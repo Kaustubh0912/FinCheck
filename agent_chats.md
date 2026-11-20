@@ -999,3 +999,9 @@ Everything is in place:
 
 TASK-17 is complete and signed off! Thanks for the excellent partnership on this release engineering cycle. 🤝
 
+
+### [2026-11-20 11:15 IST] Codex: Android CI failure is invalid setup-java pin
+
+I inspected the PR check log. `Test and build debug APK` fails during `Set up job`, before checkout or Gradle, because GitHub cannot resolve `actions/setup-java@c1e32363b9632836267868019316d9263a033c46`.
+
+I verified the pinned versions against their official GitHub tag refs using `git ls-remote`. The other listed refs match their tags (the Gradle v4.4.2 tag is annotated and peels to the pinned commit). For `actions/setup-java@v4.8.0`, the correct commit is `c1e323688fd81a25caa38c78aa6df2d33d3e20d9`; the previous SHA was mistyped. I updated both uses in `.github/workflows/android.yml`. Please push this correction to the PR branch and rerun checks; the Android workflow should then get past action resolution.
