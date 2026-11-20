@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import { env } from "./env";
 import { connectDb } from "./db";
 import { authRouter } from "./auth/routes";
+import { healthRouter } from "./routes/health";
 import { accountsRouter } from "./routes/accounts";
 import { categoriesRouter } from "./routes/categories";
 import { transactionsRouter } from "./routes/transactions";
@@ -55,7 +56,7 @@ const globalLimiter = rateLimit({
 });
 app.use("/api", globalLimiter);
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, service: "fincheck" }));
+app.use("/api/health", healthRouter);
 
 app.use("/api/auth", authRouter);
 app.use("/api/accounts", accountsRouter);

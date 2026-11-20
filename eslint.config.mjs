@@ -9,10 +9,13 @@ export default [
   {
     ignores: [
       "**/dist/**",
+      "**/build/**",
+      "**/coverage/**",
       "**/node_modules/**",
       "**/.github/**",
       "**/.idea/**",
       "**/.vscode/**",
+      "android/**",
     ]
   },
   pluginJs.configs.recommended,

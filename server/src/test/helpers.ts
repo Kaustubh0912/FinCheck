@@ -1,5 +1,3 @@
-import request from 'supertest';
-import { testApp } from './app';
 import { User, Account, Category } from '../db';
 import { signToken } from '../auth/middleware';
 

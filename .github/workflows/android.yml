@@ -2,66 +2,119 @@ name: Android CI
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [main, dev]
+    tags: ['v*']
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [main, dev]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Semantic version tag to publish (for example v1.2.3)
+        required: true
+        type: string
 
 permissions:
   contents: read
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+jobs:
+  verify:
+    name: Test and build debug APK
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./android
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e32363b9632836267868019316d9263a033c46 # v4.8.0
         with:
           java-version: '17'
-          distribution: 'temurin'
-
+          distribution: temurin
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
       - name: Make gradlew executable
         run: chmod +x gradlew
-
-      - name: Run unit tests and build release APK
-        run: ./gradlew test assembleRelease -PversionCode=${{ github.run_number }}
-
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
+      - name: Run unit tests and build debug APK
+        run: ./gradlew test assembleDebug -PversionCode=${{ github.run_number }}
+      - name: Upload debug APK
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: fincheck-android-apk-${{ github.run_number }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: fincheck-android-debug-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 7
 
   release:
-    name: Publish Android release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    name: Build and publish signed Android release
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    needs: verify
     runs-on: ubuntu-latest
+    environment: android-release
     permissions:
       contents: write
-
+    defaults:
+      run:
+        working-directory: ./android
     steps:
-      - name: Download release APK
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          name: fincheck-android-apk-${{ github.run_number }}
-          path: android/app/build/outputs/apk/release
-
-      - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v2
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}
+      - name: Validate release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must use semantic version format (vX.Y.Z)."
+            exit 1
+          fi
+      - name: Set up JDK 17
+        uses: actions/setup-java@c1e32363b9632836267868019316d9263a033c46 # v4.8.0
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Build #${{ github.run_number }} (${{ github.ref_name }})
+          java-version: '17'
+          distribution: temurin
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+      - name: Prepare release signing key
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "Configure the four Android signing secrets in the android-release environment."
+            exit 1
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/fincheck-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+      - name: Build signed release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew test assembleRelease -PversionCode=${{ github.run_number }}
+      - name: Upload release APK
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: fincheck-android-release-${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          name: FinCheck ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
           files: android/app/build/outputs/apk/release/app-release.apk

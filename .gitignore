@@ -7,6 +7,13 @@ build/
 .vercel/
 coverage/
 
+# Android signing material (never commit keystores or local signing properties)
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+key.properties
+
 # Logs
 *.log
 npm-debug.log*

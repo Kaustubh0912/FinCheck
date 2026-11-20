@@ -1,5 +1,6 @@
 import express from "express";
 import { authRouter } from "../auth/routes";
+import { healthRouter } from "../routes/health";
 import { accountsRouter } from "../routes/accounts";
 import { categoriesRouter } from "../routes/categories";
 import { transactionsRouter } from "../routes/transactions";
@@ -11,6 +12,7 @@ const testApp = express();
 
 testApp.use(express.json());
 
+testApp.use("/api/health", healthRouter);
 testApp.use("/api/auth", authRouter);
 testApp.use("/api/accounts", accountsRouter);
 testApp.use("/api/categories", categoriesRouter);
